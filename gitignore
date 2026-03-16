@@ -1,0 +1,11 @@
+__pycache__/
+code-testtkinter.py
+*.pyc
+*.pyo
+*.pdf
+*.ico
+.env
+venv/
+.vscode/
+dist/
+*.egg-info/
