@@ -48,89 +48,91 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 18, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
 
+def create_ip_verification_ui():
+    app = ctk.CTk()
+    app.title("IP Verification")
+    app.configure(fg_color=COLORS["bg"])
+    app.resizable(False, False)
+    center_window(app, 900, 700)
 
-app = ctk.CTk()
-app.title("IP Verification")
-app.configure(fg_color=COLORS["bg"])
-app.resizable(False, False)
-center_window(app, 900, 700)
+    container = ctk.CTkFrame(app, fg_color="transparent")
+    container.pack(fill="both", expand=True, padx=28, pady=20)
 
-container = ctk.CTkFrame(app, fg_color="transparent")
-container.pack(fill="both", expand=True, padx=28, pady=20)
+    ctk.CTkLabel(
+        container,
+        text="IP Verification",
+        font=("Segoe UI", 34, "bold"),
+        text_color=COLORS["text"],
+    ).pack(anchor="center")
 
-ctk.CTkLabel(
-    container,
-    text="IP Verification",
-    font=("Segoe UI", 34, "bold"),
-    text_color=COLORS["text"],
-).pack(anchor="center")
+    ctk.CTkLabel(
+        container,
+        text="Saisis une IP et un masque pour afficher les details reseau",
+        font=("Segoe UI", 15),
+        text_color=COLORS["muted"],
+    ).pack(anchor="center", pady=(4, 16))
 
-ctk.CTkLabel(
-    container,
-    text="Saisis une IP et un masque pour afficher les details reseau",
-    font=("Segoe UI", 15),
-    text_color=COLORS["muted"],
-).pack(anchor="center", pady=(4, 16))
+    card = ctk.CTkFrame(
+        container,
+        fg_color=COLORS["surface"],
+        border_width=1,
+        border_color=COLORS["border"],
+        corner_radius=14,
+    )
+    card.pack(fill="both", expand=True)
 
-card = ctk.CTkFrame(
-    container,
-    fg_color=COLORS["surface"],
-    border_width=1,
-    border_color=COLORS["border"],
-    corner_radius=14,
-)
-card.pack(fill="both", expand=True)
+    inputs_section = ctk.CTkFrame(card, fg_color="transparent")
+    inputs_section.pack(fill="x", padx=20, pady=(18, 10))
 
-inputs_section = ctk.CTkFrame(card, fg_color="transparent")
-inputs_section.pack(fill="x", padx=20, pady=(18, 10))
+    ip_octet_group(inputs_section, "IP")
+    ip_octet_group(inputs_section, "Masque")
 
-ip_octet_group(inputs_section, "IP")
-ip_octet_group(inputs_section, "Masque")
+    results = ctk.CTkFrame(
+        card,
+        fg_color=COLORS["panel"],
+        border_width=1,
+        border_color=COLORS["border"],
+        corner_radius=12,
+    )
+    results.pack(fill="both", expand=True, padx=20, pady=(0, 14))
 
-results = ctk.CTkFrame(
-    card,
-    fg_color=COLORS["panel"],
-    border_width=1,
-    border_color=COLORS["border"],
-    corner_radius=12,
-)
-results.pack(fill="both", expand=True, padx=20, pady=(0, 14))
+    fields = [
+        "Adresse reseau",
+        "Adresse broadcast",
+        "Premiere hote",
+        "Derniere hote",
+        "Nombre d hotes",
+        "Masque CIDR",
+        "Masque wildcard",
+    ]
 
-fields = [
-    "Adresse reseau",
-    "Adresse broadcast",
-    "Premiere hote",
-    "Derniere hote",
-    "Nombre d hotes",
-    "Masque CIDR",
-    "Masque wildcard",
-]
+    for label_text in fields:
+        row = ctk.CTkFrame(results, fg_color="transparent")
+        row.pack(fill="x", padx=16, pady=5)
+        ctk.CTkLabel(row, text=label_text + " :", width=180, anchor="e", font=("Segoe UI", 13), text_color=COLORS["text"]).pack(side="left")
+        ctk.CTkLabel(row, text="-", anchor="w", font=("Segoe UI", 13, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=10)
 
-for label_text in fields:
-    row = ctk.CTkFrame(results, fg_color="transparent")
-    row.pack(fill="x", padx=16, pady=5)
-    ctk.CTkLabel(row, text=label_text + " :", width=180, anchor="e", font=("Segoe UI", 13), text_color=COLORS["text"]).pack(side="left")
-    ctk.CTkLabel(row, text="-", anchor="w", font=("Segoe UI", 13, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=10)
+    actions = ctk.CTkFrame(container, fg_color="transparent")
+    actions.pack(fill="x", pady=(14, 0))
 
-actions = ctk.CTkFrame(container, fg_color="transparent")
-actions.pack(fill="x", pady=(14, 0))
+    ctk.CTkButton(
+        actions,
+        text="Verifier",
+        height=42,
+        fg_color=COLORS["primary"],
+        hover_color=COLORS["primary_hover"],
+        font=("Segoe UI", 14, "bold"),
+    ).pack(side="left", expand=True, fill="x", padx=(0, 8))
 
-ctk.CTkButton(
-    actions,
-    text="Verifier",
-    height=42,
-    fg_color=COLORS["primary"],
-    hover_color=COLORS["primary_hover"],
-    font=("Segoe UI", 14, "bold"),
-).pack(side="left", expand=True, fill="x", padx=(0, 8))
+    ctk.CTkButton(
+        actions,
+        text="Effacer",
+        height=42,
+        fg_color=COLORS["danger"],
+        hover_color=COLORS["danger_hover"],
+        font=("Segoe UI", 14, "bold"),
+    ).pack(side="left", fill="x", padx=(8, 0))
 
-ctk.CTkButton(
-    actions,
-    text="Effacer",
-    height=42,
-    fg_color=COLORS["danger"],
-    hover_color=COLORS["danger_hover"],
-    font=("Segoe UI", 14, "bold"),
-).pack(side="left", fill="x", padx=(8, 0))
+    app.mainloop()
 
-app.mainloop()
+create_ip_verification_ui()

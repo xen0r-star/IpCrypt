@@ -1,3 +1,4 @@
+from tkinter import messagebox
 import customtkinter as ctk
 
 ctk.set_appearance_mode("light")
@@ -31,68 +32,87 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
     window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
 
 
-app = ctk.CTk()
-app.title("Connexion")
-app.configure(fg_color=COLORS["bg"])
-app.resizable(False, False)
-center_window(app, 560, 430)
+def create_connexion_ui():
+    app = ctk.CTk()
+    app.title("Connexion")
+    app.configure(fg_color=COLORS["bg"])
+    app.resizable(False, False)
+    center_window(app, 560, 430)
 
-container = ctk.CTkFrame(app, fg_color="transparent")
-container.pack(fill="both", expand=True, padx=SPACING["outer_x"], pady=SPACING["outer_y"])
+    container = ctk.CTkFrame(app, fg_color="transparent")
+    container.pack(fill="both", expand=True, padx=SPACING["outer_x"], pady=SPACING["outer_y"])
 
-ctk.CTkLabel(
-    container,
-    text="Connexion",
-    font=("Segoe UI", 34, "bold"),
-    text_color=COLORS["text"],
-).pack(anchor="center")
+    ctk.CTkLabel(
+        container,
+        text="Connexion",
+        font=("Segoe UI", 34, "bold"),
+        text_color=COLORS["text"],
+    ).pack(anchor="center")
 
-ctk.CTkLabel(
-    container,
-    text="Accede a ton espace reseau",
-    font=("Segoe UI", 15),
-    text_color=COLORS["muted"],
-).pack(anchor="center", pady=(4, 16))
+    ctk.CTkLabel(
+        container,
+        text="Accede a ton espace reseau",
+        font=("Segoe UI", 15),
+        text_color=COLORS["muted"],
+    ).pack(anchor="center", pady=(4, 16))
 
-card = ctk.CTkFrame(
-    container,
-    fg_color=COLORS["surface"],
-    border_width=1,
-    border_color=COLORS["border"],
-    corner_radius=14,
-)
-card.pack(fill="x", padx=2, pady=(0, 16))
+    card = ctk.CTkFrame(
+        container,
+        fg_color=COLORS["surface"],
+        border_width=1,
+        border_color=COLORS["border"],
+        corner_radius=14,
+    )
+    card.pack(fill="x", padx=2, pady=(0, 16))
 
-form = ctk.CTkFrame(card, fg_color="transparent")
-form.pack(fill="x", padx=20, pady=18)
+    form = ctk.CTkFrame(card, fg_color="transparent")
+    form.pack(fill="x", padx=20, pady=18)
 
-ctk.CTkLabel(form, text="Nom utilisateur", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
-ctk.CTkEntry(form, height=40, fg_color=COLORS["field_bg"], border_color=COLORS["border"]).pack(fill="x", pady=(6, 12))
+    ctk.CTkLabel(form, text="Nom utilisateur", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
+    entryUserName = ctk.CTkEntry(form, height=40, fg_color=COLORS["field_bg"], border_color=COLORS["border"])
+    entryUserName.pack(fill="x", pady=(6, 12))
 
-ctk.CTkLabel(form, text="Mot de passe", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
-ctk.CTkEntry(form, height=40, show="*", fg_color=COLORS["field_bg"], border_color=COLORS["border"]).pack(fill="x", pady=(6, 10))
-ctk.CTkCheckBox(form, text="Afficher le mot de passe", text_color=COLORS["muted"]).pack(anchor="w")
+    ctk.CTkLabel(form, text="Mot de passe", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
+    entryPassword = ctk.CTkEntry(form, height=40, show="*", fg_color=COLORS["field_bg"], border_color=COLORS["border"])
+    entryPassword.pack(fill="x", pady=(6, 10))
 
-actions = ctk.CTkFrame(container, fg_color="transparent")
-actions.pack(fill="x")
+    def toggle_password():
+        entryPassword.configure(show="" if entryPassword.cget("show") == "*" else "*")
 
-ctk.CTkButton(
-    actions,
-    text="Se connecter",
-    height=42,
-    fg_color=COLORS["primary"],
-    hover_color=COLORS["primary_hover"],
-    font=("Segoe UI", 14, "bold"),
-).pack(side="left", expand=True, fill="x", padx=(0, 8))
+    ctk.CTkCheckBox(form, text="Afficher le mot de passe", text_color=COLORS["muted"], command=toggle_password).pack(anchor="w")
 
-ctk.CTkButton(
-    actions,
-    text="Quitter",
-    height=42,
-    fg_color=COLORS["danger"],
-    hover_color=COLORS["danger_hover"],
-    font=("Segoe UI", 14, "bold"),
-    command=app.destroy,
-).pack(side="left", fill="x", padx=(8, 0))
+    actions = ctk.CTkFrame(container, fg_color="transparent")
+    actions.pack(fill="x")
 
-app.mainloop()
+    def on_submit():
+        valeurUserName = entryUserName.get().strip()
+        valeurPassword = entryPassword.get().strip()
+
+        if not valeurUserName or not valeurPassword:
+            messagebox.showwarning("Attention", "Un des champs est vide.")
+        else:
+            messagebox.showinfo("UserName", f"Nom d'utilisateur : {valeurUserName}\nMot de passe : {valeurPassword}")
+
+    ctk.CTkButton(
+        actions,
+        text="Se connecter",
+        height=42,
+        fg_color=COLORS["primary"],
+        hover_color=COLORS["primary_hover"],
+        font=("Segoe UI", 14, "bold"),
+        command=on_submit,
+    ).pack(side="left", expand=True, fill="x", padx=(0, 8))
+
+    ctk.CTkButton(
+        actions,
+        text="Quitter",
+        height=42,
+        fg_color=COLORS["danger"],
+        hover_color=COLORS["danger_hover"],
+        font=("Segoe UI", 14, "bold"),
+        command=app.destroy,
+    ).pack(side="left", fill="x", padx=(8, 0))
+
+    app.mainloop()
+    
+create_connexion_ui()

@@ -38,7 +38,7 @@ ctk.CTkLabel(
     text="Menu principal",
     font=("Segoe UI", 34, "bold"),
     text_color=COLORS["text"],
-).pack(anchor="center").command=
+).pack(anchor="center")
 
 ctk.CTkLabel(
     container,
