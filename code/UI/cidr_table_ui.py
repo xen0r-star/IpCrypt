@@ -1,6 +1,7 @@
+import os
 import pandas as pd
 import customtkinter as ctk
-from tkinter import ttk
+from tkinter import filedialog, messagebox, ttk
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -18,7 +19,7 @@ COLORS = {
     "border": "#d7deea",
 }
 
-
+# Fonction pour centrer la fenêtre sur l'écran
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
     screen_w = window.winfo_screenwidth()
     screen_h = window.winfo_screenheight()
@@ -26,19 +27,38 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
     pos_y = int((screen_h - height) / 2)
     window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
 
-
+#ouverture d'une fenêtre de dialogue pour choisir le dossier de destination du fichier Excel
 def exporterTableau(tableauSR):
-    df = pd.DataFrame(tableauSR, columns=["CIDR", "Masque en Binaire", "Masque en décimal"])
-    with pd.ExcelWriter('TableauMasques.xlsx', engine="xlsxwriter") as fichier:
-        df.to_excel(fichier, sheet_name="Matrice des sous réseaux", index=False)
-    print("Le fichier a été généré avec succès !")
+    
+    try:
+        # Ouvre une boîte de dialogue pour choisir le nom et l'emplacement
+        chemin = filedialog.asksaveasfilename(
+        title="Enregistrer le fichier Excel",
+        initialfile="TableauMasques.xlsx",  # Nom par défaut
+        defaultextension=".xlsx",
+        filetypes=[("Fichiers Excel", "*.xlsx"), ("Tous les fichiers", "*.*")]
+)
 
+        if not chemin:
+            messagebox.showwarning("Annulé", "Aucun dossier sélectionné.")
+            return None
 
+        df = pd.DataFrame(tableauSR, columns=["CIDR", "Masque en Binaire", "Masque en décimal"])
+        with pd.ExcelWriter(os.path.join(chemin, "TableauMasques.xlsx"), engine="xlsxwriter") as fichier:
+            df.to_excel(fichier, sheet_name="Matrice des sous réseaux", index=False)
+
+        print(f"Le fichier a été généré avec succès à l'emplacement suivant : {os.path.join(chemin, 'TableauMasques.xlsx')}")
+
+    except Exception as e:
+        messagebox.showerror("Erreur", f"Une erreur est survenue : {e}")
+        return None
+        
+#transformation du masque binaire en décimal pour l'affichage dans le tableau et l'exportation
 def binaireDecimal(masqueBinaire):
     octets = [masqueBinaire[i:i+8] for i in range(0, 32, 8)]
     return ".".join([str(int(o, 2)) for o in octets])
 
-
+#construction du tableau CIDR pour l'affichage dans l'interface et l'exportation
 def build_cidr_rows() -> list:
     matSR = []
     for index in range(8, 31):
@@ -50,7 +70,7 @@ def build_cidr_rows() -> list:
         matSR.append([cidr, masqueBinaire, masqueDecimal])
     return matSR
 
-
+# Création de l'interface pour le tableau CIDR
 def create_cidr_table_ui():
     app = ctk.CTk()
     app.title("Tableau CIDR")
