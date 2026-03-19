@@ -85,7 +85,6 @@ def create_ip_verification_ui():
     inputs_section.pack(fill="x", padx=20, pady=(18, 10))
 
     ip_octet_group(inputs_section, "IP")
-    ip_octet_group(inputs_section, "Masque")
 
     results = ctk.CTkFrame(
         card,

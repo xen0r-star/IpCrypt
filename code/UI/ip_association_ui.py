@@ -67,7 +67,7 @@ def create_ip_association_ui():
 
     ctk.CTkLabel(
         container,
-        text="Compare deux couples IP + masque",
+        text="Compare deux adresses IP et determine si elles sont dans le meme reseau ou pas",
         font=("Segoe UI", 15),
         text_color=COLORS["muted"],
     ).pack(anchor="center", pady=(4, 16))

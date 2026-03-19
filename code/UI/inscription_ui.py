@@ -1,3 +1,5 @@
+from tkinter import messagebox
+
 import customtkinter as ctk
 
 ctk.set_appearance_mode("light")
@@ -24,6 +26,11 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
     pos_y = int((screen_h - height) / 2)
     window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
 
+def submit_inscription(entryUserNameInscription, entryPasswordInscription):
+    username= entryUserNameInscription.get().strip()
+    password= entryPasswordInscription.get().strip()
+
+    print(f"Username: {username}, Password: {password}")
 
 def create_inscription_ui():
     app = ctk.CTk()
@@ -62,8 +69,9 @@ def create_inscription_ui():
     form.pack(fill="x", padx=20, pady=18)
 
     ctk.CTkLabel(form, text="Nom utilisateur", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
-    ctk.CTkEntry(form, height=40, fg_color=COLORS["field_bg"], border_color=COLORS["border"]).pack(fill="x", pady=(6, 12))
+    entryUserNameInscription = ctk.CTkEntry(form, height=40, fg_color=COLORS["field_bg"], border_color=COLORS["border"]).pack(fill="x", pady=(6, 12))
 
+    #inserer une commande pour récupérer si admin ou client
     ctk.CTkLabel(form, text="Profil", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
     ctk.CTkOptionMenu(
         form,
@@ -76,8 +84,9 @@ def create_inscription_ui():
     ).pack(fill="x", pady=(6, 12))
 
     ctk.CTkLabel(form, text="Mot de passe", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
-    ctk.CTkEntry(form, height=40, show="*", fg_color=COLORS["field_bg"], border_color=COLORS["border"]).pack(fill="x", pady=(6, 10))
+    entryPasswordInscription = ctk.CTkEntry(form, height=40, show="*", fg_color=COLORS["field_bg"], border_color=COLORS["border"]).pack(fill="x", pady=(6, 10))
     ctk.CTkCheckBox(form, text="Afficher le mot de passe", text_color=COLORS["muted"]).pack(anchor="w")
+    
 
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(16, 0))
@@ -89,6 +98,7 @@ def create_inscription_ui():
         fg_color=COLORS["primary"],
         hover_color=COLORS["primary_hover"],
         font=("Segoe UI", 14, "bold"),
+        command=submit_inscription(entryUserNameInscription, entryPasswordInscription),
     ).pack(side="left", expand=True, fill="x", padx=(0, 8))
 
     ctk.CTkButton(
