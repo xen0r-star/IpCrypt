@@ -27,6 +27,23 @@ def verificationIP (ip):
 
 def definirClasse(premOctet):
     octet=int(premOctet)
+    match octet:
+        case _ if 1 <= octet <= 126:
+            print("Classe A")
+            return "A"
+        case _ if 128 <= octet <= 191:
+            print("Classe B")
+            return "B"
+        case _ if 192 <= octet <= 223:
+            print("Classe C")
+            return "C"
+        case _ if 224 <= octet <= 240:
+            print("Classe D")
+            return "D"
+        case _:
+            print("Classe E")
+            return "E"
+
     if octet < 127 and octet > 1:
         print("Classe A")
         return "A"
