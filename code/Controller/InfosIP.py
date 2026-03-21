@@ -25,7 +25,37 @@ def verificationIP (ip):
     
     return True
 
+def definirclasse(premOctet):
+    octet=int(premOctet)
+    if octet < 127 and octet > 1:
+        print("Classe A")
+        print("255.0.0.0")
+        classe = "A"
+    elif octet < 192 and octet > 127:
+        print("Classe B")
+        print("255.255.0.0")
+        classe = "B"
+    elif octet < 224 and octet > 191:
+        print("Classe C")
+        print("255.255.255.0")
+        classe = "C"
+    elif octet < 240 and octet > 223:
+        print("Classe D")
+        print("Pas de masque")
+        classe = "D"
+    else:
+        print("Classe E")
+        print("Pas de masque")
+        classe = "E"
+
 
 ip = input("Entrez votre adresse IP : \n")
 verificationIP(ip)
+
+segment = ip.split(".")
+definirclasse(segment[0])
+
+
+
+
 print(ip)

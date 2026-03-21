@@ -67,7 +67,7 @@ def create_ip_verification_ui():
 
     ctk.CTkLabel(
         container,
-        text="Saisis une IP et un masque pour afficher les details reseau",
+        text="Saisis une IP valide pour afficher les details",
         font=("Segoe UI", 15),
         text_color=COLORS["muted"],
     ).pack(anchor="center", pady=(4, 16))
@@ -96,6 +96,8 @@ def create_ip_verification_ui():
     results.pack(fill="both", expand=True, padx=20, pady=(0, 14))
 
     fields = [
+        "Classe du reseau",
+        "Masque du reseau",
         "Adresse reseau",
         "Adresse broadcast",
         "Premiere hote",
