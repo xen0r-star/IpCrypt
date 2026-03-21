@@ -25,7 +25,91 @@ def verificationIP (ip):
     
     return True
 
+def definirClasse(premOctet):
+    octet=int(premOctet)
+    if octet < 127 and octet > 1:
+        print("Classe A")
+        return "A"
+    elif octet < 192 and octet > 127:
+        print("Classe B")
+        return"B"
+    elif octet < 224 and octet > 191:
+        print("Classe C")
+        return "C"
+    elif octet < 240 and octet > 223:
+        print("Classe D")
+        print("Pas de masque")
+        return "D"
+    else:
+        print("Classe E")
+        print("Pas de masque")
+        return "E"
+
+def definirMasque(classe):
+    match classe:
+        case "A":
+            print("255.0.0.0")
+        case "B":
+            print("255.255.0.0")
+        case "C":
+            print("255.255.255.0")
+        case _:
+            print("Pas de masque")
+
+def adresseReseau(segment,classe):
+    match classe:
+        case "A":
+            print(segment[0],".","0",".","0",".","0")
+        case "B":
+            print(segment[0],".",segment[1],".","0",".","0")
+        case "C":
+            print(segment[0],".",segment[1],".",segment[2],".","0")
+
+def adresseBroadcast(segment,classe):
+    match classe:
+        case "A":
+            print(segment[0],".","255",".","255",".","255")
+        case "B":
+            print(segment[0],".",segment[1],".","255",".","255")
+        case "C":
+            print(segment[0],".",segment[1],".",segment[2],".","255")
+
+def premierHote(segment,classe):
+    match classe:
+        case "A":
+            print(segment[0],".","0",".","0",".","1")
+        case "B":
+            print(segment[0],".",segment[1],".","0",".","1")
+        case "C":
+            print(segment[0],".",segment[1],".",segment[2],".","1")
+
+def dernierHote(segment,classe):
+    match classe:
+        case "A":
+            print(segment[0],".","255",".","255",".","254")
+        case "B":
+            print(segment[0],".",segment[1],".","255",".","254")
+        case "C":
+            print(segment[0],".",segment[1],".",segment[2],".","254")
+
+def nombresHotes(classe):
+    match classe:
+        case "A":
+            print("16 777 214")
+        case "B":
+            print("65 534")
+        case "C":
+            print("254")
+        
 
 ip = input("Entrez votre adresse IP : \n")
 verificationIP(ip)
-print(ip)
+
+segment = ip.split(".")
+classe = definirClasse(segment[0])
+definirMasque(classe)
+adresseReseau(segment,classe)
+adresseBroadcast(segment,classe)
+premierHote(segment,classe)
+dernierHote(segment,classe)
+nombresHotes(classe)
