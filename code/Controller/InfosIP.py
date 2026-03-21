@@ -44,24 +44,6 @@ def definirClasse(premOctet):
             print("Classe E")
             return "E"
 
-    if octet < 127 and octet > 1:
-        print("Classe A")
-        return "A"
-    elif octet < 192 and octet > 127:
-        print("Classe B")
-        return"B"
-    elif octet < 224 and octet > 191:
-        print("Classe C")
-        return "C"
-    elif octet < 240 and octet > 223:
-        print("Classe D")
-        print("Pas de masque")
-        return "D"
-    else:
-        print("Classe E")
-        print("Pas de masque")
-        return "E"
-
 def definirMasque(classe):
     match classe:
         case "A":
