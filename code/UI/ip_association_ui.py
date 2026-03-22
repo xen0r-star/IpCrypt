@@ -14,8 +14,9 @@ COLORS = {
     "text": "#17233a",
     "muted": "#5b6b84",
     "border": "#d7deea",
+    "success": "#2e7d32",
+    "error": "#d94848",
 }
-
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
     screen_w = window.winfo_screenwidth()
@@ -24,108 +25,139 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
     pos_y = int((screen_h - height) / 2)
     window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
 
-
-def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
+def ip_octet_group(parent: ctk.CTkFrame, label_text: str, entries_store: list) -> None:
+    """Crée un groupe de 4 champs de saisie pour une adresse IPv4."""
     row = ctk.CTkFrame(parent, fg_color="transparent")
     row.pack(fill="x", pady=(0, 10))
 
     ctk.CTkLabel(row, text=label_text, width=90, anchor="w", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(side="left")
 
-    octet_box = ctk.CTkFrame(
-        row,
-        fg_color=COLORS["panel"],
-        border_width=1,
-        border_color=COLORS["border"],
-        corner_radius=10,
-    )
+    octet_box = ctk.CTkFrame(row, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=10)
     octet_box.pack(side="left", fill="x", expand=True)
 
     inner = ctk.CTkFrame(octet_box, fg_color="transparent")
     inner.pack(padx=12, pady=10)
 
+    # Validation : max 3 caractères numériques par octet
+    vcmd = (parent.winfo_toplevel().register(lambda val: val.isdigit() and len(val) <= 3 or val == ""), "%P")
+
+    group_entries = []
     for i in range(4):
-        ctk.CTkEntry(inner, width=55, height=36, justify="center", fg_color=COLORS["surface"], border_color=COLORS["border"]).pack(side="left")
+        entry = ctk.CTkEntry(inner, width=55, height=36, justify="center", fg_color=COLORS["surface"], border_color=COLORS["border"], validate="key", validatecommand=vcmd)
+        entry.pack(side="left")
+        group_entries.append(entry)
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 18, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
+
+    entries_store.append(group_entries)
+
+def lire_octets(group: list) -> list | None:
+    """Extrait et valide les 4 octets d'un groupe de champs Entry."""
+    octets = []
+    for entry in group:
+        val = entry.get().strip()
+        if not val.isdigit() or not (0 <= int(val) <= 255):
+            return None
+        octets.append(str(int(val)).zfill(3))
+    return octets
+
+def calcule_adresse_reseau(ip1, masque1, ip2, masque2) -> tuple[list, list,str]:
+    """Calcule les adresses réseau par AND bit à bit : IP & Masque."""
+    reseau1 = [int(ip1[i]) & int(masque1[i]) for i in range(4)]
+    reseau2 = [int(ip2[i]) & int(masque2[i]) for i in range(4)]
+
+    # Calcul croisé pour déterminer la visibilité asymétrique
+    ip2_vu_par_masque1 = [int(ip2[i]) & int(masque1[i]) for i in range(4)]
+    ip1_vu_par_masque2 = [int(ip1[i]) & int(masque2[i]) for i in range(4)]
+
+    a_voit_b = ip2_vu_par_masque1 == reseau1
+    b_voit_a = ip1_vu_par_masque2 == reseau2
+
+    if a_voit_b and b_voit_a:
+        verdict = "A et B sont dans le même réseau."
+    elif a_voit_b:
+        verdict = "A voit B mais B ne voit pas A."
+    elif b_voit_a:
+        verdict = "B voit A mais A ne voit pas B."
+    else:
+        verdict = "A et B ne se voient pas."
+
+    return reseau1, reseau2, verdict
 
 def create_ip_association_ui():
     app = ctk.CTk()
     app.title("IP Association")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(False, False)
-    center_window(app, 900, 730)
+    center_window(app, 900, 780)
+
+    # entries_store[0] = IP1, [1] = Masque1, [2] = IP2, [3] = Masque2
+    entries_store = []
 
     container = ctk.CTkFrame(app, fg_color="transparent")
     container.pack(fill="both", expand=True, padx=28, pady=20)
 
-    ctk.CTkLabel(
-        container,
-        text="IP Association",
-        font=("Segoe UI", 34, "bold"),
-        text_color=COLORS["text"],
-    ).pack(anchor="center")
+    ctk.CTkLabel(container, text="IP Association", font=("Segoe UI", 34, "bold"), text_color=COLORS["text"]).pack(anchor="center")
+    ctk.CTkLabel(container, text="Compare deux adresses IP et détermine si elles sont dans le même réseau", font=("Segoe UI", 15), text_color=COLORS["muted"]).pack(anchor="center", pady=(4, 16))
 
-    ctk.CTkLabel(
-        container,
-        text="Compare deux adresses IP et determine si elles sont dans le meme reseau ou pas",
-        font=("Segoe UI", 15),
-        text_color=COLORS["muted"],
-    ).pack(anchor="center", pady=(4, 16))
-
-    card = ctk.CTkFrame(
-        container,
-        fg_color=COLORS["surface"],
-        border_width=1,
-        border_color=COLORS["border"],
-        corner_radius=14,
-    )
+    card = ctk.CTkFrame(container, fg_color=COLORS["surface"], border_width=1, border_color=COLORS["border"], corner_radius=14)
     card.pack(fill="both", expand=True)
 
-    section_1 = ctk.CTkFrame(
-        card,
-        fg_color=COLORS["panel"],
-        border_width=1,
-        border_color=COLORS["border"],
-        corner_radius=12,
-    )
+    section_1 = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
     section_1.pack(fill="x", padx=20, pady=(18, 10))
     ctk.CTkLabel(section_1, text="Adresse 1", font=("Segoe UI", 14, "bold"), text_color=COLORS["text"]).pack(anchor="w", padx=14, pady=(12, 8))
-    ip_octet_group(section_1, "IP 1")
-    ip_octet_group(section_1, "Masque 1")
+    ip_octet_group(section_1, "IP 1", entries_store)
+    ip_octet_group(section_1, "Masque 1", entries_store)
 
-    section_2 = ctk.CTkFrame(
-        card,
-        fg_color=COLORS["panel"],
-        border_width=1,
-        border_color=COLORS["border"],
-        corner_radius=12,
-    )
+    section_2 = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
     section_2.pack(fill="x", padx=20, pady=(0, 14))
     ctk.CTkLabel(section_2, text="Adresse 2", font=("Segoe UI", 14, "bold"), text_color=COLORS["text"]).pack(anchor="w", padx=14, pady=(12, 8))
-    ip_octet_group(section_2, "IP 2")
-    ip_octet_group(section_2, "Masque 2")
+    ip_octet_group(section_2, "IP 2", entries_store)
+    ip_octet_group(section_2, "Masque 2", entries_store)
+
+    # Zone d'affichage des résultats
+    result_frame = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
+    result_frame.pack(fill="x", padx=20, pady=(0, 14))
+
+    result_label = ctk.CTkLabel(result_frame, text="", font=("Segoe UI", 13), text_color=COLORS["muted"], justify="left")
+    result_label.pack(anchor="w", padx=14, pady=12)
+
+    def on_associer():
+        ip1     = lire_octets(entries_store[0])
+        masque1 = lire_octets(entries_store[1])
+        ip2     = lire_octets(entries_store[2])
+        masque2 = lire_octets(entries_store[3])
+
+        if any(v is None for v in [ip1, masque1, ip2, masque2]):
+            result_label.configure(text="Erreur : un ou plusieurs octets sont invalides (0-255).", text_color=COLORS["error"])
+            return
+
+        reseau1, reseau2, verdict = calcule_adresse_reseau(ip1, masque1, ip2, masque2)
+
+        r1_str = '.'.join(map(str, reseau1))
+        r2_str = '.'.join(map(str, reseau2))
+        meme_reseau = reseau1 == reseau2
+
+        couleur = COLORS["success"] if meme_reseau else COLORS["error"]
+
+        result_label.configure(
+            text=f"Réseau 1 : {r1_str}\nRéseau 2 : {r2_str}\n\n{verdict}",
+            text_color=couleur
+        )
+
+    def on_effacer():
+        for group in entries_store:
+            for entry in group:
+                entry.delete(0, "end")
+        result_label.configure(text="", text_color=COLORS["muted"])
 
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(14, 0))
 
-    ctk.CTkButton(
-        actions,
-        text="Associer",
-        height=42,
-        fg_color=COLORS["primary"],
-        hover_color=COLORS["primary_hover"],
-        font=("Segoe UI", 14, "bold"),
-    ).pack(side="left", expand=True, fill="x", padx=(0, 8))
-
-    ctk.CTkButton(
-        actions,
-        text="Effacer",
-        height=42,
-        fg_color=COLORS["danger"],
-        hover_color=COLORS["danger_hover"],
-        font=("Segoe UI", 14, "bold"),
-    ).pack(side="left", fill="x", padx=(8, 0))
+    ctk.CTkButton(actions, text="Associer", height=42, fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"], font=("Segoe UI", 14, "bold"), command=on_associer).pack(side="left", expand=True, fill="x", padx=(0, 8))
+    ctk.CTkButton(actions, text="Effacer", height=42, fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"], font=("Segoe UI", 14, "bold"), command=on_effacer).pack(side="left", fill="x", padx=(8, 0))
 
     app.mainloop()
 
-create_ip_association_ui()
+if __name__ == "__main__":
+    create_ip_association_ui()
