@@ -27,23 +27,22 @@ def verificationIP (ip):
 
 def definirClasse(premOctet):
     octet=int(premOctet)
-    if octet < 127 and octet > 1:
-        print("Classe A")
-        return "A"
-    elif octet < 192 and octet > 127:
-        print("Classe B")
-        return"B"
-    elif octet < 224 and octet > 191:
-        print("Classe C")
-        return "C"
-    elif octet < 240 and octet > 223:
-        print("Classe D")
-        print("Pas de masque")
-        return "D"
-    else:
-        print("Classe E")
-        print("Pas de masque")
-        return "E"
+    match octet:
+        case _ if 1 <= octet <= 126:
+            print("Classe A")
+            return "A"
+        case _ if 128 <= octet <= 191:
+            print("Classe B")
+            return "B"
+        case _ if 192 <= octet <= 223:
+            print("Classe C")
+            return "C"
+        case _ if 224 <= octet <= 240:
+            print("Classe D")
+            return "D"
+        case _:
+            print("Classe E")
+            return "E"
 
 def definirMasque(classe):
     match classe:
@@ -100,7 +99,25 @@ def nombresHotes(classe):
             print("65 534")
         case "C":
             print("254")
-        
+
+def definirCIDR(classe):
+    match classe:
+        case "A":
+            print("0.0.0.255")
+        case "B":
+            print("0.0.255.255")
+        case "C":
+            print("0.255.255.255")
+       
+def definirMasqueWildcart(classe):
+    match classe:
+        case "A":
+            print("0.0.0.255")
+        case "B":
+            print("0.0.255.255")
+        case "C":
+            print("0.255.255.255")
+
 
 ip = input("Entrez votre adresse IP : \n")
 verificationIP(ip)
@@ -113,3 +130,4 @@ adresseBroadcast(segment,classe)
 premierHote(segment,classe)
 dernierHote(segment,classe)
 nombresHotes(classe)
+definirMasqueWildcart(classe)
