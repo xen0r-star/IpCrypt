@@ -100,25 +100,6 @@ def nombresHotes(classe):
         case "C":
             print("254")
 
-def definirCIDR(classe):
-    match classe:
-        case "A":
-            print("0.0.0.255")
-        case "B":
-            print("0.0.255.255")
-        case "C":
-            print("0.255.255.255")
-       
-def definirMasqueWildcart(classe):
-    match classe:
-        case "A":
-            print("0.0.0.255")
-        case "B":
-            print("0.0.255.255")
-        case "C":
-            print("0.255.255.255")
-
-
 ip = input("Entrez votre adresse IP : \n")
 verificationIP(ip)
 
@@ -130,4 +111,3 @@ adresseBroadcast(segment,classe)
 premierHote(segment,classe)
 dernierHote(segment,classe)
 nombresHotes(classe)
-definirMasqueWildcart(classe)

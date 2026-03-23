@@ -1,6 +1,15 @@
 from tkinter import messagebox
 import customtkinter as ctk
 
+try:
+    from utils.password_policy import validate_password_policy
+except ModuleNotFoundError:
+    import sys
+    from pathlib import Path
+
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    from utils.password_policy import validate_password_policy
+
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
@@ -32,12 +41,51 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
     window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
 
 
-def create_connexion_ui():
+def cleanup_window(window: ctk.CTk) -> None:
+    try:
+        if window.winfo_exists():
+            window.withdraw()
+            window.update_idletasks()
+    except Exception:
+        pass
+
+    try:
+        window.quit()
+    except Exception:
+        pass
+
+    try:
+        after_ids = window.tk.call("after", "info")
+        if isinstance(after_ids, str):
+            after_ids = (after_ids,) if after_ids else ()
+        for after_id in after_ids:
+            try:
+                window.after_cancel(after_id)
+            except Exception:
+                pass
+    except Exception:
+        pass
+    try:
+        if window.winfo_exists():
+            window.destroy()
+    except Exception:
+        # Python 3.14 + CustomTkinter can raise TclError during command cleanup.
+        pass
+
+
+def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
     app = ctk.CTk()
+    next_action = None
     app.title("Connexion")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(False, False)
     center_window(app, 560, 430)
+
+    def schedule_navigation(callback, *args, **kwargs):
+        nonlocal next_action
+        if callable(callback):
+            next_action = lambda: callback(*args, **kwargs)
+        app.quit()
 
     container = ctk.CTkFrame(app, fg_color="transparent")
     container.pack(fill="both", expand=True, padx=SPACING["outer_x"], pady=SPACING["outer_y"])
@@ -69,11 +117,24 @@ def create_connexion_ui():
     form.pack(fill="x", padx=20, pady=18)
 
     ctk.CTkLabel(form, text="Nom utilisateur", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
-    entryUserName = ctk.CTkEntry(form, height=40, fg_color=COLORS["field_bg"], border_color=COLORS["border"])
+    entryUserName = ctk.CTkEntry(
+        form,
+        height=40,
+        fg_color=COLORS["field_bg"],
+        border_color=COLORS["border"],
+        placeholder_text="Ex: jean_dupont (min. 3 caracteres)",
+    )
     entryUserName.pack(fill="x", pady=(6, 12))
 
     ctk.CTkLabel(form, text="Mot de passe", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
-    entryPassword = ctk.CTkEntry(form, height=40, show="*", fg_color=COLORS["field_bg"], border_color=COLORS["border"])
+    entryPassword = ctk.CTkEntry(
+        form,
+        height=40,
+        show="*",
+        fg_color=COLORS["field_bg"],
+        border_color=COLORS["border"],
+        placeholder_text="Min 12, 2 majuscules, 1 chiffre, 1 special",
+    )
     entryPassword.pack(fill="x", pady=(6, 10))
 
     def toggle_password():
@@ -90,8 +151,24 @@ def create_connexion_ui():
 
         if not valeurUserName or not valeurPassword:
             messagebox.showwarning("Attention", "Un des champs est vide.")
+            return
+
+        is_valid, error_message = validate_password_policy(
+            valeurPassword,
+            min_uppercase=2,
+            min_digits=1,
+            min_special=1,
+        )
+        if not is_valid:
+            messagebox.showwarning("Mot de passe invalide", error_message)
+            return
+
         else:
-            messagebox.showinfo("UserName", f"Nom d'utilisateur : {valeurUserName}\nMot de passe : {valeurPassword}")
+            is_admin = "admin" in valeurUserName.lower()
+            if callable(on_login_success):
+                schedule_navigation(on_login_success, is_admin=is_admin, username=valeurUserName)
+            else:
+                messagebox.showinfo("UserName", f"Nom d'utilisateur : {valeurUserName}\nMot de passe : {valeurPassword}")
 
     ctk.CTkButton(
         actions,
@@ -103,6 +180,20 @@ def create_connexion_ui():
         command=on_submit,
     ).pack(side="left", expand=True, fill="x", padx=(0, 8))
 
+    if callable(on_go_to_signup):
+        ctk.CTkButton(
+            actions,
+            text="Inscription",
+            height=42,
+            fg_color=COLORS["surface"],
+            hover_color="#eef2fb",
+            text_color=COLORS["text"],
+            border_width=1,
+            border_color=COLORS["border"],
+            font=("Segoe UI", 14, "bold"),
+            command=lambda: schedule_navigation(on_go_to_signup),
+        ).pack(side="left", fill="x", padx=(8, 8))
+
     ctk.CTkButton(
         actions,
         text="Quitter",
@@ -110,9 +201,13 @@ def create_connexion_ui():
         fg_color=COLORS["danger"],
         hover_color=COLORS["danger_hover"],
         font=("Segoe UI", 14, "bold"),
-        command=app.destroy,
+        command=app.quit,
     ).pack(side="left", fill="x", padx=(8, 0))
 
     app.mainloop()
-    
-create_connexion_ui()
+    cleanup_window(app)
+    if callable(next_action):
+        next_action()
+
+if __name__ == "__main__":
+    create_connexion_ui()

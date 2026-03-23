@@ -42,7 +42,6 @@ def transformation_decimal_binaire(ip1, masque1, ip2, masque2):
             
     calcule_adresse_reseau(ip_binary_table, masque_binary_table)
 
-
 def saisir_octets(label):
     """Saisie et validation des 4 octets d'une adresse IPv4 (0-255 par octet)."""
     print(label)
@@ -72,7 +71,6 @@ def input_des_infos():
         print()
     
     transformation_decimal_binaire(ips[0], masques[0], ips[1], masques[1])
-
 
 print("Association d'IP")
 input_des_infos()
