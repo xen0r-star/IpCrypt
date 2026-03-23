@@ -47,22 +47,22 @@ def definirClasse(premOctet):
 def definirMasque(classe):
     match classe:
         case "A":
-            print("255.0.0.0")
+            print("255.000.000.000")
         case "B":
-            print("255.255.0.0")
+            print("255.255.000.000")
         case "C":
-            print("255.255.255.0")
+            print("255.255.255.000")
         case _:
             print("Pas de masque")
 
 def adresseReseau(segment,classe):
     match classe:
         case "A":
-            print(segment[0],".","0",".","0",".","0")
+            print(segment[0],".","000",".","000",".","000")
         case "B":
-            print(segment[0],".",segment[1],".","0",".","0")
+            print(segment[0],".",segment[1],".","000",".","000")
         case "C":
-            print(segment[0],".",segment[1],".",segment[2],".","0")
+            print(segment[0],".",segment[1],".",segment[2],".","000")
 
 def adresseBroadcast(segment,classe):
     match classe:
