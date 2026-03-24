@@ -29,7 +29,6 @@ def run_app() -> None:
         #verifie que le login est correcte
         create_connexion_ui(
             on_login_success=open_menu,
-            on_go_to_signup=None,
         )
 
     def open_inscription(from_menu: bool = False) -> None:

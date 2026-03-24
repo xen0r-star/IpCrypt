@@ -142,8 +142,6 @@ def create_ip_verification_ui(on_back=None):
         "Premiere hote",
         "Derniere hote",
         "Nombre d hotes",
-        "Masque CIDR",
-        "Masque wildcard",
     ]
 
     for label_text in fields:
