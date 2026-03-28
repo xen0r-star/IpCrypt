@@ -1,5 +1,8 @@
 import customtkinter as ctk
 
+from pathlib import Path
+ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
+
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
@@ -118,6 +121,8 @@ def calcule_adresse_reseau(ip1, masque1, ip2, masque2) -> tuple[list, list,str]:
 
 def create_ip_association_ui(on_back=None):
     app = ctk.CTk()
+    if ICO.exists():
+        app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
     app.title("IP Association")
     app.configure(fg_color=COLORS["bg"])

@@ -1,5 +1,8 @@
 import customtkinter as ctk
 
+from pathlib import Path
+ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
+
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
@@ -64,6 +67,8 @@ def create_menu_ui(
     is_admin=False,
 ):
     app = ctk.CTk()
+    if ICO.exists():
+        app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
     app.title("Menu principal")
     app.configure(fg_color=COLORS["bg"])

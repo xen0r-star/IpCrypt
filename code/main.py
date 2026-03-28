@@ -1,62 +1,62 @@
-"""Point d'entree unique de l'application UI.
+import tkinter as tk
+import ctypes
+from pathlib import Path
+from PIL import Image, ImageTk
 
-Ce module orchestre la navigation entre ecrans:
-- Connexion
-- Menu principal
-- Modules (verification, association, table CIDR, inscription)
+# Icône barre des tâches Windows — AVANT tout import tkinter/ctk
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("IpCrypt.NetworkTool.1.0")
 
-La logique de routage est centralisee ici pour garder les ecrans UI simples
-et focalises sur leur rendu.
-"""
-#on import les fonctions qui cree les interfaces de chaque ecran. Chaque fonction prend un callback on_back"""
-from UI.connexion_ui import create_connexion_ui
-from UI.inscription_ui import create_inscription_ui
-from UI.menu_ui import create_menu_ui
-from UI.ip_verification_ui import create_ip_verification_ui
-from UI.ip_association_ui import create_ip_association_ui
-from UI.cidr_table_ui import create_cidr_table_ui
+BASE = Path(__file__).resolve().parent
+ICO  = BASE / "images" / "menuIpCrypt.ico"
+PNG  = BASE / "images" / "menuIpCrypt.png"
+ICO2 = BASE / "images" / "iconeIpCrypt.ico"
 
-#Demarre l'application
-def run_app() -> None:
-    
-    #current_is_admin est une varibale placé a false dés le depart et qui permet en fonction de 
-    #la connection de montrer le menu inscription ou pas dans le menu
+def show_splash() -> tk.Tk:
+    splash = tk.Tk()
+    splash.overrideredirect(True)
+
+    if ICO.exists():
+        splash.iconbitmap(str(ICO))
+
+    pil_img = Image.open(str(PNG)).resize((550, 300), Image.LANCZOS)
+    w, h = pil_img.size
+    sw = splash.winfo_screenwidth()
+    sh = splash.winfo_screenheight()
+    splash.geometry(f"{w}x{h}+{(sw-w)//2}+{(sh-h)//2}")
+
+    logo_img = ImageTk.PhotoImage(pil_img)
+    label = tk.Label(splash, image=logo_img, bd=0)
+    label.image = logo_img
+    label.pack()
+
+    splash.update()
+    return splash
+
+def launch(splash: tk.Tk) -> None:
+    # imports lourds ici — CTk, PIL, etc. chargés pendant que le splash est visible
+    from UI.connexion_ui    import create_connexion_ui
+    from UI.inscription_ui  import create_inscription_ui
+    from UI.menu_ui         import create_menu_ui
+    from UI.ip_verification_ui import create_ip_verification_ui
+    from UI.ip_association_ui  import create_ip_association_ui
+    from UI.cidr_table_ui   import create_cidr_table_ui
+
+    splash.destroy()
+
     current_is_admin = False
 
-    # si dessous on retrouve chaque appel aux fonctions pour l'ouverture des pages
-    def open_connexion() -> None:
-        #Affiche la page de connexion
-        #verifie que le login est correcte
-        create_connexion_ui(
-            on_login_success=open_menu,
-            on_go_to_signup=None,
-        )
+    def open_connexion():
+        create_connexion_ui(on_login_success=open_menu, on_go_to_signup=None)
 
-    def open_inscription(from_menu: bool = False) -> None:
-        #Affiche l'ecran d'inscription avec un retour contextuel.
-
-        #Depuis la connexion: le bouton retour renvoie vers Connexion.
-        #Depuis le menu: le bouton retour renvoie vers Menu.
-
+    def open_inscription(from_menu: bool = False):
         back_callback = open_menu if from_menu else open_connexion
-        back_text = "Retour menu" if from_menu else "Connexion"
+        back_text     = "Retour menu" if from_menu else "Connexion"
+        create_inscription_ui(on_signup_success=open_menu, on_back=back_callback, back_button_text=back_text)
 
-        create_inscription_ui(
-            on_signup_success=open_menu,
-            on_back=back_callback,
-            back_button_text=back_text,
-        )
-
-    def open_menu(is_admin=None, username=None) -> None:
-        #Affiche le menu principal en fonction du role utilisateur.
-
-        #Le callback de connexion transmet is_admin. On le memorise pour que
-        #les retours depuis les modules rechargent le bon menu sans recalcul.
-        
+    def open_menu(is_admin=None, username=None):
         nonlocal current_is_admin
         if is_admin is not None:
             current_is_admin = is_admin
-
         create_menu_ui(
             on_open_ip_verification=open_ip_verification,
             on_open_ip_association=open_ip_association,
@@ -66,23 +66,13 @@ def run_app() -> None:
             is_admin=current_is_admin,
         )
 
-    def open_ip_verification() -> None:
-        #Ouvre le module de verification IP.
+    def open_ip_verification(): create_ip_verification_ui(on_back=open_menu)
+    def open_ip_association():  create_ip_association_ui(on_back=open_menu)
+    def open_cidr_table():      create_cidr_table_ui(on_back=open_menu)
 
-        create_ip_verification_ui(on_back=open_menu)
-
-    def open_ip_association() -> None:
-        #Ouvre le module d'association IP.
-
-        create_ip_association_ui(on_back=open_menu)
-
-    def open_cidr_table() -> None:
-        #Ouvre le module de table CIDR.
-
-        create_cidr_table_ui(on_back=open_menu)
-
-    # La connexion est toujours l'ecran initial.
     open_connexion()
 
 if __name__ == "__main__":
-    run_app()
+    splash = show_splash()
+    splash.after(50, lambda: launch(splash))
+    splash.mainloop()

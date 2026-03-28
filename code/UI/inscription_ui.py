@@ -11,6 +11,9 @@ except ModuleNotFoundError:
     sys.path.append(str(Path(__file__).resolve().parent.parent))
     from utils.password_policy import validate_password_policy
 
+from pathlib import Path
+ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
+
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
@@ -83,6 +86,8 @@ def submit_inscription(entryUserNameInscription, entryPasswordInscription, profi
 
 def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text="Connexion"):
     app = ctk.CTk()
+    if ICO.exists():
+        app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
     app.title("Inscription")
     app.configure(fg_color=COLORS["bg"])

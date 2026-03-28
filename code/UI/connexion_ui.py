@@ -10,6 +10,9 @@ except ModuleNotFoundError:
     sys.path.append(str(Path(__file__).resolve().parent.parent))
     from utils.password_policy import validate_password_policy
 
+from pathlib import Path
+ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
+
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
@@ -75,6 +78,9 @@ def cleanup_window(window: ctk.CTk) -> None:
 
 def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
     app = ctk.CTk()
+    #on doit mettr ele .after pour que l'icone soit appliquée avant le mainloop, sinon elle ne s'affiche pas.
+    if ICO.exists():
+        app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
     app.title("Connexion")
     app.configure(fg_color=COLORS["bg"])
