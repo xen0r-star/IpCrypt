@@ -54,8 +54,14 @@ def launch(splash: tk.Tk) -> None:
 
     current_is_admin = False
 
-    def open_connexion():
-        create_connexion_ui(on_login_success=open_menu, on_go_to_signup=None)
+    # si dessous on retrouve chaque appel aux fonctions pour l'ouverture des pages
+    def open_connexion() -> None:
+        #Affiche la page de connexion
+        #verifie que le login est correcte
+        create_connexion_ui(
+            on_login_success=open_menu,
+            on_go_to_signup=None,
+        )
 
     def open_inscription(from_menu: bool = False):
         back_callback = open_menu if from_menu else open_connexion
