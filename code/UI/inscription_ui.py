@@ -184,6 +184,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
     def on_submit_signup():
         username = entryUserNameInscription.get().strip()
         password = entryPasswordInscription.get().strip()
+        profile = profile_var.get().strip()
 
         if not username or not password:
             messagebox.showwarning("Attention", "Un des champs est vide.")
@@ -201,7 +202,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
 
         submit_inscription(entryUserNameInscription, entryPasswordInscription, profile_var)
         if callable(on_signup_success):
-            schedule_navigation(on_signup_success)
+            schedule_navigation(on_signup_success, username=username, password=password, profile=profile)
 
     ctk.CTkButton(
         actions,

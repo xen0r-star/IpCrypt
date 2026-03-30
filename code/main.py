@@ -49,24 +49,50 @@ def launch(splash: tk.Tk) -> None:
     from UI.ip_verification_ui import create_ip_verification_ui
     from UI.ip_association_ui  import create_ip_association_ui
     from UI.cidr_table_ui   import create_cidr_table_ui
+    from utils.password_verification import hashage_motDePasse
+    from tkinter import messagebox
 
     splash.destroy()
 
     current_is_admin = False
 
     # si dessous on retrouve chaque appel aux fonctions pour l'ouverture des pages
+    def on_login_success(username=None, password=None, is_admin=None):
+        """Callback pour la connexion: hache et vérifie le mot de passe"""
+        if not username or not password:
+            messagebox.showerror("Erreur", "Nom d'utilisateur ou mot de passe manquant")
+            return
+        
+        if hashage_motDePasse(password, "connexion_ui", username):
+            open_menu(is_admin=is_admin, username=username)
+        else:
+            messagebox.showerror("Erreur d'authentification", "Nom d'utilisateur ou mot de passe incorrect")
+
+    def on_signup_success(username=None, password=None, profile=None):
+        """Callback pour l'inscription: hache et enregistre le mot de passe"""
+        if not username or not password or not profile:
+            messagebox.showerror("Erreur", "Données d'inscription incomplètes")
+            return
+        
+        if hashage_motDePasse(password, "inscription_ui", username, profile):
+            messagebox.showinfo("Succès", "Compte créé avec succès!")
+            is_admin = (profile == "Admin")
+            open_menu(is_admin=is_admin, username=username)
+        else:
+            messagebox.showerror("Erreur", "Erreur lors de la création du compte")
+
     def open_connexion() -> None:
         #Affiche la page de connexion
         #verifie que le login est correcte
         create_connexion_ui(
-            on_login_success=open_menu,
+            on_login_success=on_login_success,
             on_go_to_signup=None,
         )
 
     def open_inscription(from_menu: bool = False):
         back_callback = open_menu if from_menu else open_connexion
         back_text     = "Retour menu" if from_menu else "Connexion"
-        create_inscription_ui(on_signup_success=open_menu, on_back=back_callback, back_button_text=back_text)
+        create_inscription_ui(on_signup_success=on_signup_success, on_back=back_callback, back_button_text=back_text)
 
     def open_menu(is_admin=None, username=None):
         nonlocal current_is_admin

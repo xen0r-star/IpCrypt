@@ -172,7 +172,7 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
         else:
             is_admin = "admin" in valeurUserName.lower()
             if callable(on_login_success):
-                schedule_navigation(on_login_success, is_admin=is_admin, username=valeurUserName)
+                schedule_navigation(on_login_success, username=valeurUserName, password=valeurPassword, is_admin=is_admin)
             else:
                 messagebox.showinfo("UserName", f"Nom d'utilisateur : {valeurUserName}\nMot de passe : {valeurPassword}")
 
