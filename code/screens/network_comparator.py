@@ -166,6 +166,18 @@ def create_ip_association_ui(on_back=None):
     result_label = ctk.CTkLabel(result_frame, text="", font=("Segoe UI", 13), text_color=COLORS["muted"], justify="left")
     result_label.pack(anchor="w", padx=14, pady=12)
 
+    def on_inputs_changed(_event=None):
+        # Evite d'afficher un ancien resultat apres modification des octets.
+        result_label.configure(
+            text="Valeurs modifiees. Clique sur Associer pour recalculer.",
+            text_color=COLORS["muted"],
+        )
+
+    for group in entries_store:
+        for entry in group:
+            entry.bind("<KeyRelease>", on_inputs_changed)
+            entry.bind("<FocusOut>", on_inputs_changed)
+
     def on_associer():
         ip1     = lire_octets(entries_store[0])
         masque1 = lire_octets(entries_store[1])
