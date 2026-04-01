@@ -43,13 +43,13 @@ def show_splash() -> tk.Tk:
 
 def launch(splash: tk.Tk) -> None:
     # imports lourds ici — CTk, PIL, etc. chargés pendant que le splash est visible
-    from UI.connexion_ui    import create_connexion_ui
-    from UI.inscription_ui  import create_inscription_ui
-    from UI.menu_ui         import create_menu_ui
-    from UI.ip_verification_ui import create_ip_verification_ui
-    from UI.ip_association_ui  import create_ip_association_ui
-    from UI.cidr_table_ui   import create_cidr_table_ui
-    from utils.password_verification import hashage_motDePasse
+    from screens.login_screen      import create_connexion_ui
+    from screens.register_screen   import create_inscription_ui
+    from screens.menu_screen       import create_menu_ui
+    from screens.subnet_inspector  import create_ip_verification_ui
+    from screens.network_comparator import create_ip_association_ui
+    from screens.cidr_explorer     import create_cidr_table_ui
+    from utils.auth_service        import hashage_motDePasse
     from tkinter import messagebox
 
     splash.destroy()
