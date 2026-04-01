@@ -27,6 +27,7 @@ IP verification, subnet analysis, cross-network association, CIDR table, user ma
 
 - [About](#about)
 - [Features](#features)
+- [Demo](#demo)
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
 - [Tech Stack](#tech-stack)
@@ -48,15 +49,25 @@ User access is controlled via login (admin / client profiles). Accounts and hash
 
 ## Features
 
-| Module | Status | Description |
-|---|---|---|
-| Splash screen | Done | Animated loading screen on startup |
-| Login | Done | Username + password with policy enforcement |
-| Registration | Done | Admin-only user creation with profile selection |
-| Menu | Done | Role-aware navigation (admin vs client) |
-| IP Verification | In progress | Class, reserved/private flags, broadcast, host range |
-| IP Association | Done | Bilateral cross-network visibility check |
-| CIDR Table | Done | /8–/30 matrix with binary + decimal + Excel export |
+| Module | Status | Description | Images |
+|---|---|---|---|
+| Splash screen | Done | Animated loading screen on startup | <img src="./code/images/menuIpCrypt.png" alt="IpCrypt splash" width="320"/>
+| Login | Done | Username + password with policy enforcement | <img src="./code/images/pageConnextion.png" alt="Page connexion" width="320"/>
+| Registration | Done | Admin-only user creation with profile selection | <img src="./code/images/pageInscription.png" alt="Page inscription" width="320"/>
+| Menu | Done | Role-aware navigation (admin vs client) | <img src="./code/images/pageMenu.png" alt="Page menu" width="320"/>
+| IP Verification | In progress | Class, reserved/private flags, broadcast, host range | <img src="./code/images/pageVerificationIp.png" alt="Page vérification IP" width="320"/>
+| IP Association | Done | Bilateral cross-network visibility check | <img src="./code/images/pageAssociationIp.png" alt="Page association IP" width="320"/>
+| CIDR Table | Done | /8–/30 matrix with binary + decimal + Excel export | <img src="./code/images/pageTableauCIDR.png" alt="Page tableau CIDR" width="320"/>
+
+---
+
+## Demo
+
+<div align="center">
+  <img src="./code/images/demo.gif" alt="IpCrypt Demo" width="600"/>
+</div>
+
+> 📝 **Add your demo GIF here:** Place a `demo.gif` file in the `code/images/` directory to show the application workflow (e.g., login → menu → module navigation).
 
 ---
 
