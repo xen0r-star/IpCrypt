@@ -1,8 +1,17 @@
 import os
-import pandas as pd
+import csv
 import customtkinter as ctk
 from tkinter import filedialog, messagebox, ttk
 from pathlib import Path
+
+try:
+    import pandas as pd
+    _PANDAS_AVAILABLE = True
+except Exception:
+    # On some Windows setups, application control can block pandas native DLLs.
+    pd = None
+    _PANDAS_AVAILABLE = False
+
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 ctk.set_appearance_mode("light")
@@ -65,23 +74,41 @@ def cleanup_window(window: ctk.CTk) -> None:
 def exporterTableau(tableauSR):
     
     try:
-        # Ouvre une boîte de dialogue pour choisir le nom et l'emplacement
-        chemin = filedialog.asksaveasfilename(
-        title="Enregistrer le fichier Excel",
-        initialfile="TableauMasques.xlsx",  # Nom par défaut
-        defaultextension=".xlsx",
-        filetypes=[("Fichiers Excel", "*.xlsx"), ("Tous les fichiers", "*.*")]
-)
+        if _PANDAS_AVAILABLE:
+            # Ouvre une boîte de dialogue pour choisir le nom et l'emplacement
+            chemin = filedialog.asksaveasfilename(
+                title="Enregistrer le fichier Excel",
+                initialfile="TableauMasques.xlsx",
+                defaultextension=".xlsx",
+                filetypes=[("Fichiers Excel", "*.xlsx"), ("Tous les fichiers", "*.*")],
+            )
+        else:
+            chemin = filedialog.asksaveasfilename(
+                title="Enregistrer le fichier CSV",
+                initialfile="TableauMasques.csv",
+                defaultextension=".csv",
+                filetypes=[("Fichiers CSV", "*.csv"), ("Tous les fichiers", "*.*")],
+            )
 
         if not chemin:
             messagebox.showwarning("Annulé", "Aucun dossier sélectionné.")
             return None
 
-        df = pd.DataFrame(tableauSR, columns=["CIDR", "Masque en Binaire", "Masque en décimal"])
-        with pd.ExcelWriter(os.path.join(chemin, "TableauMasques.xlsx"), engine="xlsxwriter") as fichier:
-            df.to_excel(fichier, sheet_name="Matrice des sous réseaux", index=False)
-
-        print(f"Le fichier a été généré avec succès à l'emplacement suivant : {os.path.join(chemin, 'TableauMasques.xlsx')}")
+        if _PANDAS_AVAILABLE:
+            df = pd.DataFrame(tableauSR, columns=["CIDR", "Masque en Binaire", "Masque en décimal"])
+            with pd.ExcelWriter(chemin, engine="xlsxwriter") as fichier:
+                df.to_excel(fichier, sheet_name="Matrice des sous réseaux", index=False)
+            print(f"Le fichier a été généré avec succès à l'emplacement suivant : {chemin}")
+        else:
+            with open(chemin, "w", newline="", encoding="utf-8") as fichier:
+                writer = csv.writer(fichier)
+                writer.writerow(["CIDR", "Masque en Binaire", "Masque en décimal"])
+                writer.writerows(tableauSR)
+            messagebox.showinfo(
+                "Export CSV",
+                "Pandas est indisponible (DLL bloquée). Export réalisé en CSV.",
+            )
+            print(f"Le fichier CSV a été généré avec succès à l'emplacement suivant : {chemin}")
 
     except Exception as e:
         messagebox.showerror("Erreur", f"Une erreur est survenue : {e}")
@@ -204,7 +231,7 @@ def create_cidr_table_ui(on_back=None):
 
     ctk.CTkLabel(
         container,
-        text="Pret a exporter le tableau CIDR",
+        text=("Pret a exporter le tableau CIDR (Excel)" if _PANDAS_AVAILABLE else "Pret a exporter le tableau CIDR (CSV)"),
         font=("Segoe UI", 12),
         text_color=COLORS["muted"],
     ).pack(anchor="w", pady=(10, 0))
@@ -214,7 +241,7 @@ def create_cidr_table_ui(on_back=None):
 
     ctk.CTkButton(
         actions,
-        text="Export",
+        text=("Export Excel" if _PANDAS_AVAILABLE else "Export CSV"),
         height=42,
         fg_color=COLORS["primary"],
         hover_color=COLORS["primary_hover"],
