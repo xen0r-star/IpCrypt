@@ -78,11 +78,26 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
     inner = ctk.CTkFrame(octet_box, fg_color="transparent")
     inner.pack(padx=12, pady=10)
 
+    vcmd = (parent.winfo_toplevel().register(lambda val: val.isdigit() and len(val) <= 3 or val == ""), "%P")
+    
+    group_entries = []
     for i in range(4):
-        ctk.CTkEntry(inner, width=55, height=36, justify="center", fg_color=COLORS["surface"], border_color=COLORS["border"]).pack(side="left")
+        entry = ctk.CTkEntry(inner, width=55, height=36, justify="center", fg_color=COLORS["surface"], border_color=COLORS["border"], validate="key", validatecommand=vcmd)
+        entry.pack(side="left")
+        group_entries.append(entry)
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 18, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
 
+def lire_octets(group: list) -> list | None:
+    """Extrait et valide les 4 octets d'un groupe de champs Entry."""
+    octets = []
+    for entry in group:
+        val = entry.get().strip()
+        if not val.isdigit() or not (0 <= int(val) <= 255):
+            return None
+        octets.append(str(int(val)).zfill(3))
+    return octets
+    
 def create_ip_verification_ui(on_back=None):
     app = ctk.CTk()
     if ICO.exists():
