@@ -5,6 +5,8 @@ code-testtkinter.py
 *.pdf
 *.ico
 .env
+.env.*
+!.env.example
 venv/
 .vscode/
 dist/

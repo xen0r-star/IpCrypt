@@ -1,23 +1,22 @@
--- Créer la base de données
-CREATE DATABASE IF NOT EXISTS connectionIpCrypt CHARACTER SET = 'utf8mb4';
+-- PostgreSQL / Supabase script
+-- En Supabase, la base est deja creee: ne pas utiliser CREATE DATABASE / USE.
 
--- Utiliser la base de données
-USE connectionIpCrypt;
-
--- Créer la table users avec structure optimisée
 CREATE TABLE IF NOT EXISTS users (
-    userId INT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    isAdmin BOOLEAN NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    password TEXT NOT NULL,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
 
 -- Exemples d'INSERT
 -- Note: Les password sont des hashes Argon2 (ils seront générés en Python lors de l'inscription via argon2)
 -- Pour tester en local, tu peux utiliser les hashs d'exemple ci-dessous
 
-INSERT INTO users (username, password, isAdmin) VALUES
-('admin', '$argon2id$v=19$m=65540,t=3,p=4$9WcC6Fj2zl8pQkLm3NwOqQ$Vk5V+zE7kB2jL8QmN9pO3U5W6X7Y8Z9a0b1c2d3e4f5g', 1),
-('jean', '$argon2id$v=19$m=65540,t=3,p=4$5XyZ1Ab3cDeFgHiJkLmNoP$Pq2R3S4T5U6V7W8X9Y0Z1a2b3c4d5e6f7g8h9i0j1k2l', 0),
-('marie', '$argon2id$v=19$m=65540,t=3,p=4$8AbCdEfGhIjKlMnOpQrStU$VwXyZ1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0', 0);
+INSERT INTO users (username, password, is_admin) VALUES
+('vdp_corentin', '$argon2id$v=19$m=65536,t=3,p=1$REPLACE_WITH_REAL_HASH$REPLACE_WITH_REAL_HASH', TRUE),
+('cnv_evan', '$argon2id$v=19$m=65536,t=3,p=1$REPLACE_WITH_REAL_HASH$REPLACE_WITH_REAL_HASH', TRUE),
+('client_test', '$argon2id$v=19$m=65536,t=3,p=1$REPLACE_WITH_REAL_HASH$REPLACE_WITH_REAL_HASH', FALSE)
+ON CONFLICT (username) DO NOTHING;
 

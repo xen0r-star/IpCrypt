@@ -1,5 +1,6 @@
 from tkinter import messagebox
 import customtkinter as ctk
+from pathlib import Path
 
 try:
     from utils.auth_policy import validate_password_policy
@@ -10,7 +11,6 @@ except ModuleNotFoundError:
     sys.path.append(str(Path(__file__).resolve().parent.parent))
     from utils.auth_policy import validate_password_policy
 
-from pathlib import Path
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 ctk.set_appearance_mode("light")

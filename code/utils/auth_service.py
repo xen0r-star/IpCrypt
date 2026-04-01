@@ -1,7 +1,11 @@
-from argon2 import PasswordHasher, exceptions
-from argon2 import Type
+import os
 
-import pymysql.cursors
+from argon2 import PasswordHasher, Type, exceptions
+from dotenv import load_dotenv
+from psycopg import connect
+from psycopg.rows import dict_row
+
+load_dotenv()
 
 #parametre argon2 - hésite a les mettres dans .venv (variable d'environnement pour plus sécutité)
 pwdHasher = PasswordHasher(
@@ -14,88 +18,72 @@ pwdHasher = PasswordHasher(
     type=Type.ID
 )
 
-#meme raisonnement que pour les parametres 'argon2
-#etant donné que se sont des info sensible les décaller dans .venv
-_connection = None
-
 def get_connection():
-    global _connection
-    if _connection is None:
-        _connection = pymysql.connect(
-            host='localhost',
-            user='root',
-            password='',
-            database='gestion_ip',
-            cursorclass=pymysql.cursors.DictCursor
-        )
-    return _connection
+    host = os.getenv("DB_HOST")
+    password = os.getenv("DB_PASSWORD")
+    if not host or not password:
+        raise ValueError("DB_HOST et DB_PASSWORD doivent etre definis dans les variables d'environnement (.env).")
+
+    return connect(
+        host=host,
+        port=os.getenv("DB_PORT", "5432"),
+        dbname=os.getenv("DB_NAME", "postgres"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=password,
+        sslmode=os.getenv("DB_SSLMODE", "require"),
+        row_factory=dict_row,
+    )
 
 #il faut une fonction qui va aller vérif dans le db grace au nom d'utilisateur si les mdp correspondent ou pas
 def recuperation_motDePasse_database(username):
-    connection = get_connection()
-    with connection:
+    with get_connection() as connection:
         with connection.cursor() as cursor:
-            #requete pour recuperer le mot hashé et faire une comparaison
-            sql = "SELECT password FROM users WHERE username=%s"
-            cursor.execute(sql, (username))
-            result = cursor.fetchone()
-            print(result)
-            return result
+            sql = "SELECT username, password, is_admin FROM users WHERE username=%s"
+            cursor.execute(sql, (username,))
+            return cursor.fetchone()
+
+
+def recuperation_utilisateur_database(username):
+    return recuperation_motDePasse_database(username)
 
 def inscription_dans_database(username:str, profilUser:str, passwordHashed:str) -> bool:
-    connection = get_connection()
-    with connection:
+    with get_connection() as connection:
         with connection.cursor() as cursor:
-            #insertion des données
-            sql = "INSERT INTO users (username, password, isAdmin) VALUES (%s, %s, %s)"
-            #changemenent de profil user de str a bool
-            if(profilUser == "Admin"):
-                profilUser = 1
-            else :
-                profilUser = 0
-            cursor.execute(sql, (username, passwordHashed, profilUser))
-            connection.commit()
-    print("Ajout effectue")
+            sql = "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s)"
+            is_admin = profilUser == "Admin"
+            cursor.execute(sql, (username, passwordHashed, is_admin))
+        connection.commit()
     return True
 
 #verification du mot de passe 
 def verification_motDePasse(passwordToVerify: str, passwordHashed: str) -> bool:
     try:
+        # Argon2 verify signature: verify(stored_hash, plain_password)
         pwdHasher.verify(passwordHashed, passwordToVerify)
-        print("password correct")
         return True
     except exceptions.VerifyMismatchError:
-        print("password incorrect")
         return False
-    except exceptions.VerificationError as e:
-        print(f"Verification failed: {e}")
+    except exceptions.VerificationError:
         return False
-    except Exception as e:
-        print(f"Unexpected error: {e}") 
+    except Exception:
         return False
 
 #hashage du mot de passe et en fonction de la source on vérifie ou on enregistre
 def hashage_motDePasse(motDePasseEnClaire: str, source: str, username: str, profilUser: str = None) -> bool:
     try:
         if source == "connexion_ui":
-            # Connexion: hash le mot de passe et le vérifie contre la BD
-            motDePasseHashe = pwdHasher.hash(motDePasseEnClaire)
+            # Connexion: ne pas re-hasher; verifier le password en clair contre le hash stocke.
             motDePasseAVerifier = recuperation_motDePasse_database(username)
             if motDePasseAVerifier is None:
-                print("Utilisateur non trouvé")
                 return False
-            # Récupérer le hash depuis le dictionnaire
             passwordHash = motDePasseAVerifier.get('password', '')
-            return verification_motDePasse(motDePasseHashe, passwordHash)
+            return verification_motDePasse(motDePasseEnClaire, passwordHash)
         
         elif source == "inscription_ui":
-            # Inscription: hash et enregistre dans la BD
             motDePasseHashe = pwdHasher.hash(motDePasseEnClaire)
             return inscription_dans_database(username, profilUser, motDePasseHashe)
         
         else:
-            print(f"Source inconnue: {source}")
             return False
-    except Exception as e:
-        print(f"Error hashing password: {e}")
+    except Exception:
         return False

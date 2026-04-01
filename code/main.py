@@ -53,7 +53,7 @@ def launch(splash: tk.Tk) -> None:
     from screens.subnet_inspector  import create_ip_verification_ui
     from screens.network_comparator import create_ip_association_ui
     from screens.cidr_explorer     import create_cidr_table_ui
-    from utils.auth_service        import hashage_motDePasse
+    from utils.auth_service        import hashage_motDePasse, recuperation_utilisateur_database
     from tkinter import messagebox
 
     try:
@@ -73,7 +73,9 @@ def launch(splash: tk.Tk) -> None:
             return
         
         if hashage_motDePasse(password, "connexion_ui", username):
-            open_menu(is_admin=is_admin, username=username)
+            user = recuperation_utilisateur_database(username)
+            db_is_admin = bool(user.get("is_admin")) if user else False
+            open_menu(is_admin=db_is_admin, username=username)
         else:
             messagebox.showerror("Erreur d'authentification", "Nom d'utilisateur ou mot de passe incorrect")
 

@@ -49,15 +49,39 @@ User access is controlled via login (admin / client profiles). Accounts and hash
 
 ## Features
 
-| Module | Status | Description | Images |
-|---|---|---|---|
-| Splash screen | Done | Animated loading screen on startup | <img src="./code/images/menuIpCrypt.png" alt="IpCrypt splash" width="320"/>
-| Login | Done | Username + password with policy enforcement | <img src="./code/images/pageConnextion.png" alt="Page connexion" width="320"/>
-| Registration | Done | Admin-only user creation with profile selection | <img src="./code/images/pageInscription.png" alt="Page inscription" width="320"/>
-| Menu | Done | Role-aware navigation (admin vs client) | <img src="./code/images/pageMenu.png" alt="Page menu" width="320"/>
-| IP Verification | In progress | Class, reserved/private flags, broadcast, host range | <img src="./code/images/pageVerificationIp.png" alt="Page vérification IP" width="320"/>
-| IP Association | Done | Bilateral cross-network visibility check | <img src="./code/images/pageAssociationIp.png" alt="Page association IP" width="320"/>
-| CIDR Table | Done | /8–/30 matrix with binary + decimal + Excel export | <img src="./code/images/pageTableauCIDR.png" alt="Page tableau CIDR" width="320"/>
+| Module | Status | Description |
+|---|---|---|
+| Splash screen | Done | Animated loading screen on startup |
+| Login | Done | Username + password with policy enforcement |
+| Registration | Done | Admin-only user creation with profile selection |
+| Menu | Done | Role-aware navigation (admin vs client) |
+| IP Verification | In progress | Class, reserved/private flags, broadcast, host range |
+| IP Association | Done | Bilateral cross-network visibility check |
+| CIDR Table | Done | /8-/30 matrix with binary + decimal + Excel export |
+
+---
+
+## Screenshots
+
+<div align="center">
+    <table>
+        <tr>
+            <td align="center"><strong>Splash</strong><br/><img src="./code/images/pageSplash.png" alt="Splash screen" width="300"/></td>
+            <td align="center"><strong>Connexion</strong><br/><img src="./code/images/pageConnexion.png" alt="Page connexion" width="300"/></td>
+            <td align="center"><strong>Inscription</strong><br/><img src="./code/images/pageInscription.png" alt="Page inscription" width="300"/></td>
+        </tr>
+        <tr>
+            <td align="center"><strong>Menu</strong><br/><img src="./code/images/pageMenu.png" alt="Page menu" width="300"/></td>
+            <td align="center"><strong>Verification IP</strong><br/><img src="./code/images/pageVerificationIp.png" alt="Page verification IP" width="300"/></td>
+            <td align="center"><strong>Association IP</strong><br/><img src="./code/images/pageAssociationIp.png" alt="Page association IP" width="300"/></td>
+        </tr>
+        <tr>
+            <td align="center"><strong>Tableau CIDR</strong><br/><img src="./code/images/pageTableauCIDR.png" alt="Page tableau CIDR" width="300"/></td>
+            <td></td>
+            <td></td>
+        </tr>
+    </table>
+</div>
 
 ---
 
