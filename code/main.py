@@ -23,7 +23,7 @@ def show_splash() -> tk.Tk:
     w, h = pil_img.size
     sw = splash.winfo_screenwidth()
     sh = splash.winfo_screenheight()
-    splash.geometry(f"{w}x{h + 40}+{(sw-w)//2}+{(sh-h)//2}")  # +40 pour le label
+    splash.geometry(f"{w}x{h + 40}+{(sw-w)//2}+{(sh-h)//2}")
 
     logo_img = ImageTk.PhotoImage(pil_img)
     label = tk.Label(splash, image=logo_img, bd=0, bg="#ffffff")
@@ -33,11 +33,15 @@ def show_splash() -> tk.Tk:
     dots_label = tk.Label(splash, text="Chargement", font=("Segoe UI", 11), bg="#ffffff", fg="#5b6b84")
     dots_label.pack(pady=(4, 0))
 
+    after_id = None  # track the callback
+
     def animate_dots(count=0):
+        nonlocal after_id
         dots_label.config(text="Chargement" + "." * count)
-        splash.after(400, animate_dots, (count + 1) % 4)
+        after_id = splash.after(400, animate_dots, (count + 1) % 4)
 
     animate_dots()
+    splash._dots_after_id = lambda: after_id  # expose pour annulation
     splash.update()
     return splash
 
@@ -52,6 +56,11 @@ def launch(splash: tk.Tk) -> None:
     from utils.auth_service        import hashage_motDePasse
     from tkinter import messagebox
 
+    try:
+        for after_id in splash.tk.call("after", "info"):
+            splash.after_cancel(after_id)
+    except Exception:
+        pass
     splash.destroy()
 
     current_is_admin = False
@@ -115,5 +124,5 @@ def launch(splash: tk.Tk) -> None:
 
 if __name__ == "__main__":
     splash = show_splash()
-    splash.after(50, lambda: launch(splash))
+    splash.after(1500, lambda: launch(splash))
     splash.mainloop()
