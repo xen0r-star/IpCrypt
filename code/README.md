@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="images/menuIpCrypt.png" alt="IpCrypt logo" width="320"/>
+
 # IpCrypt
 
 Desktop network tool — Python + CustomTkinter.
@@ -140,13 +142,13 @@ IpCrypt/
 │   ├── login_screen.py          # was connexion_ui.py
 │   ├── register_screen.py       # was inscription_ui.py
 │   ├── menu_screen.py           # was menu_ui.py
-│   ├── subnet_inspector.py      # was ip_verification_ui.py  — logic: class detection, broadcast, host range
-│   ├── network_comparator.py    # was ip_association_ui.py   — logic: AND-based network calc, bilateral check
-│   └── cidr_explorer.py         # was cidr_table_ui.py       — logic: CIDR matrix build, binary↔decimal, xlsx export
+│   ├── subnet_inspector.py      # was ip_verification_ui.py  — class detection, broadcast, host range
+│   ├── network_comparator.py    # was ip_association_ui.py   — AND-based network calc, bilateral check
+│   └── cidr_explorer.py         # was cidr_table_ui.py       — CIDR matrix, binary↔decimal, xlsx export
 ├── utils/
 │   ├── auth_policy.py           # was password_policy.py
 │   └── auth_service.py          # was password_verification.py — argon2 hashing + DB ops
-├── data/
+├── database/
 │   └── connection.sql
 ├── images/
 │   ├── iconeIpCrypt.ico
@@ -205,7 +207,7 @@ pip install customtkinter pillow pandas xlsxwriter argon2-cffi pymysql
 ### 4. Database setup
 
 ```bash
-mysql -u root -p < data/connection.sql
+mysql -u root -p < database/connection.sql
 ```
 
 ### 5. Run
@@ -277,7 +279,7 @@ The validator is parametric — thresholds can be adjusted per call site.
 
 - [ ] Wire IP Verification business logic (class detection, broadcast, host range)
 - [ ] Input validation on IP Verification (currently no octet validation)
-- [ ] Centralize shared UI constants (`COLORS`, `center_window`, `cleanup_window`) into a `screens/shared.py` module
+- [ ] Centralize shared UI constants (`COLORS`, `center_window`, `cleanup_window`) into `screens/shared.py`
 - [ ] Move DB credentials to `.env` / environment variables
 - [ ] Unit tests for network calculation functions (`calcule_adresse_reseau`, `build_cidr_rows`)
 - [ ] Add IP class mask deduction (classful)
