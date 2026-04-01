@@ -4,7 +4,7 @@
 
 # IpCrypt
 
-Desktop network tool — Python + CustomTkinter.  
+Desktop network tool — Python + CustomTkinter.
 IP verification, subnet analysis, cross-network association, CIDR table, user management.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
@@ -19,14 +19,13 @@ IP verification, subnet analysis, cross-network association, CIDR table, user ma
   <a href="#screenshots">Screenshots</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#architecture">Architecture</a> •
-  <a href="#modules">Modules</a>
+  <a href="#modules">Modules</a> •
+  <a href="#roadmap">Roadmap</a>
 </p>
 
 ---
 
-## 🎬 Demo
-
-> ⚠️ À venir — ajoute ton GIF ici
+## Demo
 
 <p align="center">
   <img src="images/demo.gif" alt="Application demo" width="700"/>
@@ -34,41 +33,41 @@ IP verification, subnet analysis, cross-network association, CIDR table, user ma
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
-### 🔐 Login
+### Login
 <p align="center">
   <img src="images/login.png" width="600"/>
 </p>
 
-### 📝 Register (Admin)
+### Register (Admin)
 <p align="center">
   <img src="images/register.png" width="600"/>
 </p>
 
-### 🧭 Menu principal
+### Menu
 <p align="center">
   <img src="images/menu.png" width="600"/>
 </p>
 
-### 🌐 IP Verification
+### IP Verification
 <p align="center">
   <img src="images/ip_verification.png" width="600"/>
 </p>
 
-### 🔗 IP Association
+### IP Association
 <p align="center">
   <img src="images/ip_association.png" width="600"/>
 </p>
 
-### 📊 CIDR Table
+### CIDR Table
 <p align="center">
   <img src="images/cidr_table.png" width="600"/>
 </p>
 
 ---
 
-## 📚 Table of Contents
+## Table of Contents
 
 - [About](#about)
 - [Features](#features)
@@ -82,69 +81,35 @@ IP verification, subnet analysis, cross-network association, CIDR table, user ma
 
 ---
 
-## 🧠 About
+## About
 
 IpCrypt is a Python desktop application built for the BAC2 Systems & Networks curriculum.
-
-It provides a GUI-first approach to common IP addressing tasks:
-- Class detection
-- Subnet calculation
-- Cross-network visibility
-- CIDR table generation  
-
-⚠️ All calculations are implemented **manually** (no `ipaddress`, `socket`, etc.)
-
-User access is controlled via authentication (admin / client), with credentials stored securely in a MySQL database.
+It provides a GUI-first approach to common IP addressing tasks without relying on networking libraries.
 
 ---
 
-## 🚀 Features
+## Features
 
 | Module | Status | Description |
 |---|---|---|
 | Splash screen | Done | Animated loading screen |
-| Login | Done | Secure authentication |
-| Registration | Done | Admin-only user creation |
+| Login | Done | Authentication |
+| Registration | Done | Admin user creation |
 | Menu | Done | Role-based navigation |
-| IP Verification | In progress | Full subnet analysis |
+| IP Verification | In progress | Subnet analysis |
 | IP Association | Done | Network comparison |
-| CIDR Table | Done | CIDR matrix + Excel export |
+| CIDR Table | Done | CIDR matrix export |
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
-The app uses a **sequential window model**:
-- Each screen is independent (`CTk`)
-- No threading
-- Clean navigation flow
-
-### Navigation flow
-
-```mermaid
-flowchart LR
-    A([main.py]) --> B[Splash]
-    B --> C[login_screen]
-
-    C -->|login success| D[menu_screen]
-    D -->|logout| C
-
-    D -->|IP Verification| F[subnet_inspector]
-    D -->|IP Association| G[network_comparator]
-    D -->|CIDR Table| H[cidr_explorer]
-    D -->|admin only| E[register_screen]
-
-    F --> D
-    G --> D
-    H --> D
-    E --> D
-```
+Sequential window model using CustomTkinter.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
-```text
 IpCrypt/
 ├── main.py
 ├── screens/
@@ -152,11 +117,10 @@ IpCrypt/
 ├── database/
 ├── images/
 └── requirements.txt
-```
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 - Python 3.10+
 - CustomTkinter
@@ -167,78 +131,26 @@ IpCrypt/
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
-### 1. Clone
-
-```bash
 git clone <repo-url>
 cd IpCrypt
-```
 
-### 2. Virtual environment
-
-```bash
 python -m venv .venv
 
-# Windows
-.\.venv\Scripts\Activate.ps1
-
-# Linux / macOS
-source .venv/bin/activate
-```
-
-### 3. Install
-
-```bash
 pip install -r requirements.txt
-```
 
-### 4. Database
-
-```bash
-mysql -u root -p < database/connection.sql
-```
-
-### 5. Run
-
-```bash
 python main.py
-```
 
 ---
 
-## 🧩 Modules
+## Modules
 
-### 🔐 Login
-- Username + password
-- Validation + policy enforcement
-- Redirect to menu
-
-### 📝 Registration
-- Admin only
-- User creation + hashing
-
-### 🧭 Menu
-- Role-based UI
-- Navigation hub
-
-### 🌐 IP Verification
-- Class detection
-- Broadcast / host range
-- (logic en cours)
-
-### 🔗 IP Association
-- Compare 2 réseaux
-- Vérification bidirectionnelle
-
-### 📊 CIDR Table
-- /8 → /30
-- Export Excel
+Login, Registration, Menu, IP Verification, IP Association, CIDR Table
 
 ---
 
-## 🔒 Password Policy
+## Password Policy
 
 | Rule | Value |
 |---|---|
@@ -249,37 +161,14 @@ python main.py
 
 ---
 
-## 🛣️ Roadmap
+## Roadmap
 
-- [ ] Finaliser IP Verification
-- [ ] Validation complète des inputs
-- [ ] Centraliser UI constants
-- [ ] Ajouter `.env` pour DB
-- [ ] Tests unitaires
-- [ ] Sécurité backend admin
+- Complete IP Verification
+- Add validation
+- Add tests
 
 ---
 
-## 📸 Images (IMPORTANT)
+## Author
 
-Ton chemin local :
-C:\Users\Corentin\Desktop\BAC2\5.SR\Projet-Phase1\code\images
-
-➡️ Sur GitHub utilise uniquement :
-images/nom_image.png
-
-Structure recommandée :
-images/
-├── login.png
-├── register.png
-├── menu.png
-├── ip_verification.png
-├── ip_association.png
-├── cidr_table.png
-├── demo.gif
-
----
-
-## 👨‍💻 Author
-
-Projet réalisé dans le cadre du BAC2 Systèmes & Réseaux — Phase 1.
+BAC2 Systems & Networks project.
