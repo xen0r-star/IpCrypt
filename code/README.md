@@ -65,21 +65,30 @@ The app uses a **sequential window model**: each screen is a `ctk.CTk()` instanc
 ### Navigation flow
 
 ```mermaid
-flowchart TD
+flowchart LR
     A([main.py]) --> B[Splash]
     B --> C[login_screen]
+
     C -->|login success| D[menu_screen]
-    C -->|go to signup| E[register_screen]
-    E -->|success| D
-    E -->|back| C
-    D -->|IP Verification| F[subnet_inspector]
-    D -->|IP Association| G[network_comparator]
-    D -->|CIDR Table| H[cidr_explorer]
-    D -->|Inscription - admin only| E
     D -->|logout| C
+
+    subgraph modules["Modules"]
+        direction TB
+        F[subnet_inspector]
+        G[network_comparator]
+        H[cidr_explorer]
+        E[register_screen]
+    end
+
+    D -->|IP Verification| F
+    D -->|IP Association| G
+    D -->|CIDR Table| H
+    D -->|admin only| E
+
     F -->|back| D
     G -->|back| D
     H -->|back| D
+    E -->|back| D
 ```
 
 ### Module dependencies
@@ -89,6 +98,7 @@ graph LR
     subgraph entry["Entry"]
         MAIN(main.py)
     end
+
     subgraph screens["Screens"]
         CX(login_screen)
         IN(register_screen)
@@ -97,10 +107,12 @@ graph LR
         IA(network_comparator)
         CT(cidr_explorer)
     end
+
     subgraph utils["Utils"]
         PP(auth_policy)
         PV(auth_service)
     end
+
     subgraph ext["External libs"]
         AR([argon2-cffi])
         MY([pymysql])
@@ -135,27 +147,13 @@ IpCrypt/
 │   ├── auth_policy.py           # was password_policy.py
 │   └── auth_service.py          # was password_verification.py — argon2 hashing + DB ops
 ├── data/
-│   └── connection.sql           # DB schema + seed
+│   └── connection.sql
 ├── images/
 │   ├── iconeIpCrypt.ico
 │   ├── menuIpCrypt.ico
 │   └── menuIpCrypt.png
 └── requirements.txt
 ```
-
-### Why the rename?
-
-The `_ui` suffix implied view-only files. Three of them contain non-trivial business logic:
-
-| Old name | Logic inside |
-|---|---|
-| `ip_verification_ui.py` | Subnet class detection, broadcast calc, host range (in progress) |
-| `ip_association_ui.py` | `calcule_adresse_reseau()`, `lire_octets()`, bilateral AND check |
-| `cidr_table_ui.py` | `build_cidr_rows()`, `binaireDecimal()`, Excel export pipeline |
-| `password_verification.py` | argon2 hashing + all DB read/write ops — not just "verification" |
-| `password_policy.py` | Auth rule engine — belongs logically with `auth_service` |
-
-The new names reflect what each file actually does, not just how it looks.
 
 ---
 
@@ -229,14 +227,14 @@ python main.py
 
 ### Registration (`screens/register_screen.py`)
 
-- Accessible from menu by admin only, or directly from login
+- Accessible from menu by admin only
 - Profile selector: Client / Admin
 - Delegates hashing + DB insert to `utils/auth_service.py`
 
 ### Menu (`screens/menu_screen.py`)
 
 - Radio-button module selector
-- Admin view: Inscription, IP Verification, IP Association, CIDR Table
+- Admin view: Register, IP Verification, IP Association, CIDR Table
 - Client view: IP Verification, IP Association, CIDR Table
 
 ### IP Verification (`screens/subnet_inspector.py`)
