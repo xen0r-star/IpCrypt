@@ -1,5 +1,5 @@
 import re
-from utils import password_verification
+from utils import auth_service
 
 def validate_password_policy(
     password: str,

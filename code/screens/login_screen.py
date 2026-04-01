@@ -2,13 +2,13 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 try:
-    from utils.password_policy import validate_password_policy
+    from utils.auth_policy import validate_password_policy
 except ModuleNotFoundError:
     import sys
     from pathlib import Path
 
     sys.path.append(str(Path(__file__).resolve().parent.parent))
-    from utils.password_policy import validate_password_policy
+    from utils.auth_policy import validate_password_policy
 
 from pathlib import Path
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"

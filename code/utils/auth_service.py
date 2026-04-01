@@ -1,9 +1,6 @@
 from argon2 import PasswordHasher, exceptions
 from argon2 import Type
 
-from UI.connexion_ui import create_connexion_ui
-from UI.inscription_ui import submit_inscription
-
 import pymysql.cursors
 
 #parametre argon2 - hésite a les mettres dans .venv (variable d'environnement pour plus sécutité)
@@ -19,16 +16,23 @@ pwdHasher = PasswordHasher(
 
 #meme raisonnement que pour les parametres 'argon2
 #etant donné que se sont des info sensible les décaller dans .venv
-connection = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='',
-    database='gestion_ip',
-    cursorclass=pymysql.cursors.DictCursor
-)
+_connection = None
+
+def get_connection():
+    global _connection
+    if _connection is None:
+        _connection = pymysql.connect(
+            host='localhost',
+            user='root',
+            password='',
+            database='gestion_ip',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+    return _connection
 
 #il faut une fonction qui va aller vérif dans le db grace au nom d'utilisateur si les mdp correspondent ou pas
 def recuperation_motDePasse_database(username):
+    connection = get_connection()
     with connection:
         with connection.cursor() as cursor:
             #requete pour recuperer le mot hashé et faire une comparaison
@@ -39,6 +43,7 @@ def recuperation_motDePasse_database(username):
             return result
 
 def inscription_dans_database(username:str, profilUser:str, passwordHashed:str) -> bool:
+    connection = get_connection()
     with connection:
         with connection.cursor() as cursor:
             #insertion des données
