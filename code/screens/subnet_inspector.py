@@ -23,64 +23,69 @@ def definirClasse(premOctet):
     octet=int(premOctet)
     match octet:
         case _ if 1 <= octet <= 126:
-            print("Classe A")
-            return "A"
+            classeAdresse = "A"
+            return "Classe A"
         case _ if 128 <= octet <= 191:
-            print("Classe B")
-            return "B"
+            classeAdresse = "B"
+            return "Classe B"
         case _ if 192 <= octet <= 223:
-            print("Classe C")
-            return "C"
+            classeAdresse = "C"
+            return "Classe C"
         case _ if 224 <= octet <= 240:
-            print("Classe D")
-            return "D"
+            classeAdresse = "D"
+            return "Classe D"
         case _:
-            print("Classe E")
-            return "E"
+            classeAdresse = "E"
+            return "Classe E"
 
 def definirMasque(classe):
-    match classe:
-        case "A":
-            print("255.000.000.000")
-        case "B":
-            print("255.255.000.000")
-        case "C":
-            print("255.255.255.000")
-        case _:
-            print("Pas de masque")
+    masques = {"A": "255.0.0.0", "B": "255.255.0.0", "C": "255.255.255.0"}
+    return masques.get(classe, "Pas de masque")
 
-def adresseReseau(segment,classe):
-    match classe:
-        case "A":
-            print(segment[0],".","000",".","000",".","000")
-            print(segment[0],".","255",".","255",".","255")
-        case "B":
-            print(segment[0],".",segment[1],".","000",".","000")
-            print(segment[0],".",segment[1],".","255",".","255")
-        case "C":
-            print(segment[0],".",segment[1],".",segment[2],".","000")
-            print(segment[0],".",segment[1],".",segment[2],".","255")
+def adresseReseau(segment, classe):
+    if classe == "A": return f"{segment[0]}.0.0.0"
+    if classe == "B": return f"{segment[0]}.{segment[1]}.0.0"
+    if classe == "C": return f"{segment[0]}.{segment[1]}.{segment[2]}.0"
+    return "N/A"
+
+def adresseBroadcast(segment, classe):
+    if classe == "A": return f"{segment[0]}.255.255.255"
+    if classe == "B": return f"{segment[0]}.{segment[1]}.255.255"
+    if classe == "C": return f"{segment[0]}.{segment[1]}.{segment[2]}.255"
+    return "N/A"
 
 def premierHote(segment,classe):
     match classe:
         case "A":
-            print(segment[0],".","0",".","0",".","1")
-            print(segment[0],".","255",".","255",".","254")
+            return f"{segment[0]}.0.0.1"
         case "B":
-            print(segment[0],".",segment[1],".","0",".","1")
-            print(segment[0],".",segment[1],".","255",".","254")
+            return f"{segment[0]}.{segment[1]}.0.1"
         case "C":
-            print(segment[0],".",segment[1],".",segment[2],".","1")
-            print(segment[0],".",segment[1],".",segment[2],".","254")
+            return f"{segment[0]}.{segment[1]}.{segment[2]}.1"
+        case _:
+            return "N/A"
+
+def dernierHote(segment,classe):
+    match classe:
+        case "A":
+            return f"{segment[0]}.255.255.254"
+        case "B":
+            return f"{segment[0]}.{segment[1]}.255.254"
+        case "C":
+            return f"{segment[0]}.{segment[1]}.{segment[2]}.254"
+        case _:
+            return "N/A"
 
 def nombresHotes(classe):
     match classe:
         case "A":
-            print("16 777 214")
+            return "16 777 214"
         case "B":
-            print("65 534")
+            return "65 534"
         case "C":
-            print("254")
+            return "254"
+        case _:
+            return "N/A"
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
     screen_w = window.winfo_screenwidth()
@@ -121,6 +126,7 @@ def cleanup_window(window: ctk.CTk) -> None:
         # Python 3.14 + CustomTkinter can raise TclError during command cleanup.
         pass
 
+group_entries = []
 
 def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
     row = ctk.CTkFrame(parent, fg_color="transparent")
@@ -142,13 +148,14 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
 
     vcmd = (parent.winfo_toplevel().register(lambda val: val.isdigit() and len(val) <= 3 or val == ""), "%P")
     
-    group_entries = []
     for i in range(4):
         entry = ctk.CTkEntry(inner, width=55, height=36, justify="center", fg_color=COLORS["surface"], border_color=COLORS["border"], validate="key", validatecommand=vcmd)
         entry.pack(side="left")
         group_entries.append(entry)
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 18, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
+
+result_labels = {}
 
 def lire_octets(group: list) -> list | None:
     """Extrait et valide les 4 octets d'un groupe de champs Entry."""
@@ -233,11 +240,22 @@ def create_ip_verification_ui(on_back=None):
         ctk.CTkLabel(row, text="-", anchor="w", font=("Segoe UI", 13, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=10)
 
     def on_verify():
-        octets = lire_octets(inputs_section.winfo_children()[0].winfo_children())
-        if octets is None:
-            # Affiche une erreur ou un message d'invalidité
-            return
-        ip_str = ".".join(octets)
+    # On utilise directement notre liste all_entries
+        octets = lire_octets(group_entries)
+        classeAdresse = "N/A"
+        
+        if octets:
+            classe = definirClasse(octets[0])
+            
+            # Mise à jour des labels via le dictionnaire
+            result_labels["Classe du reseau"].configure(text=classe, text_color=COLORS["primary"])
+            result_labels["Masque du reseau"].configure(text=definirMasque(classe))
+            result_labels["Adresse reseau"].configure(text=adresseReseau(octets, classe))
+            # ... continue pour les autres champs
+        else:
+            # Optionnel : Message d'erreur si IP invalide
+            result_labels["Classe du reseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
+
         
 
     def on_clear():
