@@ -19,6 +19,7 @@ COLORS = {
     "border": "#d7deea",
 }
 
+groupentries = []
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
     screen_w = window.winfo_screenwidth()
@@ -179,14 +180,21 @@ def create_ip_verification_ui(on_back=None):
         
 
     def on_clear():
-        for entry in inputs_section.winfo_children()[0].winfo_children():
-            entry.delete(0, "end")
-        # Reset les resultats aussi
+        def clear_recursive(container):
+            for widget in container.winfo_children():
+                # Si c'est un champ de saisie, on l'efface
+                if isinstance(widget, ctk.CTkEntry):
+                    widget.delete(0, "end")
+                # Si c'est un cadre, on regarde à l'intérieur
+                elif isinstance(widget, (ctk.CTkFrame, ctk.CTkScrollableFrame)):
+                    clear_recursive(widget)
+        clear_recursive(inputs_section)
+        # Reset les labels de résultats ici si besoin
 
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(14, 0))
 
-    ctk.CTkButton(
+    ctk.CTkButton( 
         actions,
         text="Verifier",
         height=42,
