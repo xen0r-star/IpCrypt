@@ -19,7 +19,68 @@ COLORS = {
     "border": "#d7deea",
 }
 
-groupentries = []
+def definirClasse(premOctet):
+    octet=int(premOctet)
+    match octet:
+        case _ if 1 <= octet <= 126:
+            print("Classe A")
+            return "A"
+        case _ if 128 <= octet <= 191:
+            print("Classe B")
+            return "B"
+        case _ if 192 <= octet <= 223:
+            print("Classe C")
+            return "C"
+        case _ if 224 <= octet <= 240:
+            print("Classe D")
+            return "D"
+        case _:
+            print("Classe E")
+            return "E"
+
+def definirMasque(classe):
+    match classe:
+        case "A":
+            print("255.000.000.000")
+        case "B":
+            print("255.255.000.000")
+        case "C":
+            print("255.255.255.000")
+        case _:
+            print("Pas de masque")
+
+def adresseReseau(segment,classe):
+    match classe:
+        case "A":
+            print(segment[0],".","000",".","000",".","000")
+            print(segment[0],".","255",".","255",".","255")
+        case "B":
+            print(segment[0],".",segment[1],".","000",".","000")
+            print(segment[0],".",segment[1],".","255",".","255")
+        case "C":
+            print(segment[0],".",segment[1],".",segment[2],".","000")
+            print(segment[0],".",segment[1],".",segment[2],".","255")
+
+def premierHote(segment,classe):
+    match classe:
+        case "A":
+            print(segment[0],".","0",".","0",".","1")
+            print(segment[0],".","255",".","255",".","254")
+        case "B":
+            print(segment[0],".",segment[1],".","0",".","1")
+            print(segment[0],".",segment[1],".","255",".","254")
+        case "C":
+            print(segment[0],".",segment[1],".",segment[2],".","1")
+            print(segment[0],".",segment[1],".",segment[2],".","254")
+
+def nombresHotes(classe):
+    match classe:
+        case "A":
+            print("16 777 214")
+        case "B":
+            print("65 534")
+        case "C":
+            print("254")
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
     screen_w = window.winfo_screenwidth()
