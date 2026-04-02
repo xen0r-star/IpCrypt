@@ -170,6 +170,19 @@ def create_ip_verification_ui(on_back=None):
         ctk.CTkLabel(row, text=label_text + " :", width=180, anchor="e", font=("Segoe UI", 13), text_color=COLORS["text"]).pack(side="left")
         ctk.CTkLabel(row, text="-", anchor="w", font=("Segoe UI", 13, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=10)
 
+    def on_verify():
+        octets = lire_octets(inputs_section.winfo_children()[0].winfo_children())
+        if octets is None:
+            # Affiche une erreur ou un message d'invalidité
+            return
+        ip_str = ".".join(octets)
+        
+
+    def on_clear():
+        for entry in inputs_section.winfo_children()[0].winfo_children():
+            entry.delete(0, "end")
+        # Reset les resultats aussi
+
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(14, 0))
 
@@ -180,6 +193,7 @@ def create_ip_verification_ui(on_back=None):
         fg_color=COLORS["primary"],
         hover_color=COLORS["primary_hover"],
         font=("Segoe UI", 14, "bold"),
+        command=on_verify,
     ).pack(side="left", expand=True, fill="x", padx=(0, 8))
 
     ctk.CTkButton(
@@ -189,6 +203,7 @@ def create_ip_verification_ui(on_back=None):
         fg_color=COLORS["danger"],
         hover_color=COLORS["danger_hover"],
         font=("Segoe UI", 14, "bold"),
+        command=on_clear,
     ).pack(side="left", fill="x", padx=(8, 0))
 
     ctk.CTkButton(
