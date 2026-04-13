@@ -6,19 +6,35 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-COLORS = {
-    "bg": "#f4f6fb",
-    "surface": "#ffffff",
-    "panel": "#f9fbff",
-    "primary": "#2f6fed",
-    "primary_hover": "#2459c9",
-    "danger": "#d94848",
-    "danger_hover": "#b93a3a",
-    "text": "#17233a",
-    "muted": "#5b6b84",
-    "border": "#d7deea",
-}
+# ancienne couleur - laisse si besoin
+# COLORS = {
+#     "bg": "#eef1f6",
+#     "surface": "#ffffff",
+#     "panel": "#f6f8fc",
+#     "primary": "#3f5fa8",
+#     "primary_hover": "#355190",
+#     "danger": "#b05f5f",
+#     "danger_hover": "#994f4f",
+#     "text": "#16233b",
+#     "muted": "#5a6b86",
+#     "border": "#cfd8e6",
+# }
 
+COLORS = {
+    "bg": "#f8f9fa",
+    "surface": "#ffffff",
+    "panel": "#f6f8fc",
+    "primary": "#2c5aa0",
+    "primary_hover": "#1c4a80",
+    "danger": "#a94442",
+    "danger_hover": "#8c3a3a",
+    "text": "#16233b",
+    "muted": "#6a7b86",
+    "border": "#e0e0e0",
+    "field_bg": "#f6f8fc",
+    "success": "#4a8c62",
+    "error": "#a94442",
+}
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
     screen_w = window.winfo_screenwidth()
@@ -126,7 +142,7 @@ def create_ip_verification_ui(on_back=None):
 
     ctk.CTkLabel(
         container,
-        text="Saisis une IP valide pour afficher les details",
+        text="Saisis une IP valide pour afficher les détails",
         font=("Segoe UI", 15),
         text_color=COLORS["muted"],
     ).pack(anchor="center", pady=(4, 16))
@@ -155,13 +171,13 @@ def create_ip_verification_ui(on_back=None):
     results.pack(fill="both", expand=True, padx=20, pady=(0, 14))
 
     fields = [
-        "Classe du reseau",
-        "Masque du reseau",
-        "Adresse reseau",
+        "Classe du réseau",
+        "Masque du réseau",
+        "Adresse réseau",
         "Adresse broadcast",
-        "Premiere hote",
-        "Derniere hote",
-        "Nombre d hotes",
+        "Premier hôte",
+        "Dernier hôte",
+        "Nombre d'hôtes",
     ]
 
     for label_text in fields:
@@ -175,7 +191,7 @@ def create_ip_verification_ui(on_back=None):
 
     ctk.CTkButton(
         actions,
-        text="Verifier",
+        text="Vérifier",
         height=42,
         fg_color=COLORS["primary"],
         hover_color=COLORS["primary_hover"],
@@ -193,10 +209,10 @@ def create_ip_verification_ui(on_back=None):
 
     ctk.CTkButton(
         actions,
-        text="Retour menu",
+        text="Retour au menu",
         height=42,
         fg_color=COLORS["surface"],
-        hover_color="#eef2fb",
+        hover_color="#e8ebf0",
         text_color=COLORS["text"],
         border_width=1,
         border_color=COLORS["border"],

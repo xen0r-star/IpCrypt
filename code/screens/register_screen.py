@@ -17,19 +17,35 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-COLORS = {
-    "bg": "#f4f6fb",
-    "surface": "#ffffff",
-    "primary": "#2f6fed",
-    "primary_hover": "#2459c9",
-    "danger": "#d94848",
-    "danger_hover": "#b93a3a",
-    "text": "#17233a",
-    "muted": "#5b6b84",
-    "border": "#d7deea",
-    "field_bg": "#f9fbff",
-}
+# ancienne couleur - laisse si besoin
+# COLORS = {
+#     "bg": "#eef1f6",
+#     "surface": "#ffffff",
+#     "primary": "#3f5fa8",
+#     "primary_hover": "#355190",
+#     "danger": "#b05f5f",
+#     "danger_hover": "#994f4f",
+#     "text": "#16233b",
+#     "muted": "#5a6b86",
+#     "border": "#cfd8e6",
+#     "field_bg": "#f6f8fc",
+# }
 
+COLORS = {
+    "bg": "#f8f9fa",
+    "surface": "#ffffff",
+    "primary": "#2c5aa0",
+    "primary_hover": "#1c4a80",
+    "danger": "#a94442",
+    "danger_hover": "#8c3a3a",
+    "text": "#16233b",
+    "muted": "#6a7b86",
+    "border": "#e0e0e0",
+    "field_bg": "#f6f8fc",
+    "panel": "#f6f8fc",
+    "success": "#4a8c62",
+    "error": "#a94442",
+}
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
     screen_w = window.winfo_screenwidth()
@@ -112,7 +128,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
 
     ctk.CTkLabel(
         container,
-        text="Cree un compte utilisateur",
+        text="Crée un compte utilisateur",
         font=("Segoe UI", 15),
         text_color=COLORS["muted"],
     ).pack(anchor="center", pady=(4, 16))
@@ -135,11 +151,11 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
         height=40,
         fg_color=COLORS["field_bg"],
         border_color=COLORS["border"],
-        placeholder_text="Ex: jean_dupont (min. 3 caracteres)",
+        placeholder_text="Ex. : jean_dupont (min. 3 caractères)",
     )
     entryUserNameInscription.pack(fill="x", pady=(6, 12))
 
-    #inserer une commande pour récupérer si admin ou client
+    # Insérer une commande pour récupérer si admin ou client.
     ctk.CTkLabel(form, text="Profil", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
     profile_var = StringVar(value="Client")
     ctk.CTkOptionMenu(
@@ -160,7 +176,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
         show="*",
         fg_color=COLORS["field_bg"],
         border_color=COLORS["border"],
-        placeholder_text="Min 12, 2 majuscules, 1 chiffre, 1 special",
+        placeholder_text="Min. 12, 2 majuscules, 1 chiffre, 1 caractère spécial",
     )
     entryPasswordInscription.pack(fill="x", pady=(6, 10))
 
@@ -206,12 +222,12 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
 
     ctk.CTkButton(
         actions,
-        text="Creer le compte",
+        text="Créer le compte",
         height=42,
         fg_color=COLORS["primary"],
         hover_color=COLORS["primary_hover"],
         font=("Segoe UI", 14, "bold"),
-        #insertion de lambad car sinon python execute directement la fonction submit_inscription au lieu de l'associer au bouton
+        # Insertion de lambda, sinon Python exécute directement la fonction au lieu de l'associer au bouton.
         command=on_submit_signup,
         ).pack(side="left", expand=True, fill="x", padx=(0, 8))
 
@@ -220,7 +236,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
         text=back_button_text,
         height=42,
         fg_color=COLORS["surface"],
-        hover_color="#eef2fb",
+        hover_color="#e8ebf0",
         text_color=COLORS["text"],
         border_width=1,
         border_color=COLORS["border"],

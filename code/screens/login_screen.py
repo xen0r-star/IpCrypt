@@ -16,17 +16,34 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# ancienne couleur - laisse si besoin
+# COLORS = {
+#     "bg": "#eef1f6",
+#     "surface": "#ffffff",
+#     "primary": "#3f5fa8",
+#     "primary_hover": "#355190",
+#     "danger": "#b05f5f",
+#     "danger_hover": "#994f4f",
+#     "text": "#16233b",
+#     "muted": "#5a6b86",
+#     "border": "#cfd8e6",
+#     "field_bg": "#f6f8fc",
+# }
+
 COLORS = {
-    "bg": "#f4f6fb",
+    "bg": "#f8f9fa",
     "surface": "#ffffff",
-    "primary": "#2f6fed",
-    "primary_hover": "#2459c9",
-    "danger": "#d94848",
-    "danger_hover": "#b93a3a",
-    "text": "#17233a",
-    "muted": "#5b6b84",
-    "border": "#d7deea",
-    "field_bg": "#f9fbff",
+    "primary": "#2c5aa0",
+    "primary_hover": "#1c4a80",
+    "danger": "#a94442",
+    "danger_hover": "#8c3a3a",
+    "text": "#16233b",
+    "muted": "#6a7b86",
+    "border": "#e0e0e0",
+    "field_bg": "#f6f8fc",
+    "panel": "#f6f8fc",
+    "success": "#4a8c62",
+    "error": "#a94442",
 }
 
 SPACING = {
@@ -78,7 +95,7 @@ def cleanup_window(window: ctk.CTk) -> None:
 
 def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
     app = ctk.CTk()
-    #on doit mettr ele .after pour que l'icone soit appliquée avant le mainloop, sinon elle ne s'affiche pas.
+    # On doit mettre le .after pour que l'icône soit appliquée avant le mainloop.
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
@@ -105,7 +122,7 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
 
     ctk.CTkLabel(
         container,
-        text="Accede a ton espace reseau",
+        text="Accède à ton espace réseau",
         font=("Segoe UI", 15),
         text_color=COLORS["muted"],
     ).pack(anchor="center", pady=(4, 16))
@@ -128,7 +145,7 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
         height=40,
         fg_color=COLORS["field_bg"],
         border_color=COLORS["border"],
-        placeholder_text="Ex: jean_dupont (min. 3 caracteres)",
+        placeholder_text="Ex. : jean_dupont (min. 3 caractères)",
     )
     entryUserName.pack(fill="x", pady=(6, 12))
 
@@ -139,7 +156,7 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
         show="*",
         fg_color=COLORS["field_bg"],
         border_color=COLORS["border"],
-        placeholder_text="Min 12, 2 majuscules, 1 chiffre, 1 special",
+        placeholder_text="Min. 12, 2 majuscules, 1 chiffre, 1 caractère spécial",
     )
     entryPassword.pack(fill="x", pady=(6, 10))
 
@@ -192,7 +209,7 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
             text="Inscription",
             height=42,
             fg_color=COLORS["surface"],
-            hover_color="#eef2fb",
+            hover_color="#e8ebf0",
             text_color=COLORS["text"],
             border_width=1,
             border_color=COLORS["border"],

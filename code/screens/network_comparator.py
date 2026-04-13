@@ -6,19 +6,36 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# ancienne couleur - laisse si besoin
+# COLORS = {
+#     "bg": "#eef1f6",
+#     "surface": "#ffffff",
+#     "panel": "#f6f8fc",
+#     "primary": "#3f5fa8",
+#     "primary_hover": "#355190",
+#     "danger": "#b05f5f",
+#     "danger_hover": "#994f4f",
+#     "text": "#16233b",
+#     "muted": "#5a6b86",
+#     "border": "#cfd8e6",
+#     "success": "#3f7a52",
+#     "error": "#b05f5f",
+# }
+
 COLORS = {
-    "bg": "#f4f6fb",
+    "bg": "#f8f9fa",
     "surface": "#ffffff",
-    "panel": "#f9fbff",
-    "primary": "#2f6fed",
-    "primary_hover": "#2459c9",
-    "danger": "#d94848",
-    "danger_hover": "#b93a3a",
-    "text": "#17233a",
-    "muted": "#5b6b84",
-    "border": "#d7deea",
-    "success": "#2e7d32",
-    "error": "#d94848",
+    "panel": "#f6f8fc",
+    "primary": "#2c5aa0",
+    "primary_hover": "#1c4a80",
+    "danger": "#a94442",
+    "danger_hover": "#8c3a3a",
+    "text": "#16233b",
+    "muted": "#6a7b86",
+    "border": "#e0e0e0",
+    "field_bg": "#f6f8fc",
+    "success": "#4a8c62",
+    "error": "#a94442",
 }
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
@@ -167,9 +184,9 @@ def create_ip_association_ui(on_back=None):
     result_label.pack(anchor="w", padx=14, pady=12)
 
     def on_inputs_changed(_event=None):
-        # Evite d'afficher un ancien resultat apres modification des octets.
+        # Évite d'afficher un ancien résultat après modification des octets.
         result_label.configure(
-            text="Valeurs modifiees. Clique sur Associer pour recalculer.",
+            text="Valeurs modifiées. Clique sur Associer pour recalculer.",
             text_color=COLORS["muted"],
         )
 
@@ -214,10 +231,10 @@ def create_ip_association_ui(on_back=None):
     ctk.CTkButton(actions, text="Effacer", height=42, fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"], font=("Segoe UI", 14, "bold"), command=on_effacer).pack(side="left", fill="x", padx=(8, 0))
     ctk.CTkButton(
         actions,
-        text="Retour menu",
+        text="Retour au menu",
         height=42,
         fg_color=COLORS["surface"],
-        hover_color="#eef2fb",
+        hover_color="#e8ebf0",
         text_color=COLORS["text"],
         border_width=1,
         border_color=COLORS["border"],

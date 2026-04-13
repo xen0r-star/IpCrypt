@@ -17,17 +17,34 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# ancienne couleur - laissée si besoin
+# COLORS = {
+#     "bg": "#eef1f6",
+#     "surface": "#ffffff",
+#     "panel": "#f6f8fc",
+#     "primary": "#3f5fa8",
+#     "primary_hover": "#355190",
+#     "danger": "#b05f5f",
+#     "danger_hover": "#994f4f",
+#     "text": "#16233b",
+#     "muted": "#5a6b86",
+#     "border": "#cfd8e6",
+# }
+
 COLORS = {
-    "bg": "#f4f6fb",
+    "bg": "#f8f9fa",
     "surface": "#ffffff",
-    "panel": "#f9fbff",
-    "primary": "#2f6fed",
-    "primary_hover": "#2459c9",
-    "danger": "#d94848",
-    "danger_hover": "#b93a3a",
-    "text": "#17233a",
-    "muted": "#5b6b84",
-    "border": "#d7deea",
+    "panel": "#f6f8fc",
+    "primary": "#2c5aa0",
+    "primary_hover": "#1c4a80",
+    "danger": "#a94442",
+    "danger_hover": "#8c3a3a",
+    "text": "#16233b",
+    "muted": "#6a7b86",
+    "border": "#e0e0e0",
+    "field_bg": "#f6f8fc",
+    "success": "#4a8c62",
+    "error": "#a94442",
 }
 
 # Fonction pour centrer la fenêtre sur l'écran
@@ -97,7 +114,7 @@ def exporterTableau(tableauSR):
         if _PANDAS_AVAILABLE:
             df = pd.DataFrame(tableauSR, columns=["CIDR", "Masque en Binaire", "Masque en décimal"])
             with pd.ExcelWriter(chemin, engine="xlsxwriter") as fichier:
-                df.to_excel(fichier, sheet_name="Matrice des sous réseaux", index=False)
+                df.to_excel(fichier, sheet_name="Matrice des sous-réseaux", index=False)
             print(f"Le fichier a été généré avec succès à l'emplacement suivant : {chemin}")
         else:
             with open(chemin, "w", newline="", encoding="utf-8") as fichier:
@@ -211,7 +228,7 @@ def create_cidr_table_ui(on_back=None):
 
     tree.heading("cidr", text="CIDR")
     tree.heading("binary", text="Masque en binaire")
-    tree.heading("decimal", text="Masque en decimal")
+    tree.heading("decimal", text="Masque en décimal")
 
     tree.column("cidr", width=110, anchor="center")
     tree.column("binary", width=460, anchor="center")
@@ -231,7 +248,7 @@ def create_cidr_table_ui(on_back=None):
 
     ctk.CTkLabel(
         container,
-        text=("Pret a exporter le tableau CIDR (Excel)" if _PANDAS_AVAILABLE else "Pret a exporter le tableau CIDR (CSV)"),
+        text=("Prêt à exporter le tableau CIDR (Excel)" if _PANDAS_AVAILABLE else "Prêt à exporter le tableau CIDR (CSV)"),
         font=("Segoe UI", 12),
         text_color=COLORS["muted"],
     ).pack(anchor="w", pady=(10, 0))
@@ -251,7 +268,7 @@ def create_cidr_table_ui(on_back=None):
 
     ctk.CTkButton(
         actions,
-        text="Retour menu",
+        text="Retour au menu",
         height=42,
         fg_color=COLORS["danger"],
         hover_color=COLORS["danger_hover"],

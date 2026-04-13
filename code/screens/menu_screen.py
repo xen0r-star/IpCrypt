@@ -6,16 +6,35 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# ancienne couleur - laisse si besoin
+# COLORS = {
+#     "bg": "#eef1f6",
+#     "surface": "#ffffff",
+#     "primary": "#3f5fa8",
+#     "primary_hover": "#355190",
+#     # "danger": "#d9484897",
+#     # "danger_hover": "#b93a3a",
+#     "danger": "#b05f5f",
+#     "danger_hover": "#994f4f",
+#     "text": "#16233b",
+#     "muted": "#5a6b86",
+#     "border": "#cfd8e6",
+# }
+
 COLORS = {
-    "bg": "#f4f6fb",
+    "bg": "#f8f9fa",
     "surface": "#ffffff",
-    "primary": "#2f6fed",
-    "primary_hover": "#2459c9",
-    "danger": "#d94848",
-    "danger_hover": "#b93a3a",
-    "text": "#17233a",
-    "muted": "#5b6b84",
-    "border": "#d7deea",
+    "primary": "#2c5aa0",
+    "primary_hover": "#1c4a80",
+    "danger": "#a94442",
+    "danger_hover": "#8c3a3a",
+    "text": "#16233b",
+    "muted": "#6a7b86",
+    "border": "#e0e0e0",
+    "field_bg": "#f6f8fc",
+    "panel": "#f6f8fc",
+    "success": "#4a8c62",
+    "error": "#a94442",
 }
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
@@ -84,7 +103,7 @@ def create_menu_ui(
     container = ctk.CTkFrame(app, fg_color="transparent")
     container.pack(fill="both", expand=True, padx=28, pady=20)
 
-    #style donne via customtkinter, pas besoin de faire du css ou du ttk"
+    # Style donné via CustomTkinter, pas besoin de faire du CSS ou du ttk.
     ctk.CTkLabel(
         container,
         text="Menu principal",
@@ -94,7 +113,7 @@ def create_menu_ui(
 
     ctk.CTkLabel(
         container,
-        text="Selectionne un module puis ouvre-le",
+        text="Sélectionne un module puis ouvre-le",
         font=("Segoe UI", 15),
         text_color=COLORS["muted"],
     ).pack(anchor="center", pady=(4, 16))
@@ -131,7 +150,7 @@ def create_menu_ui(
     for module_name in modules:
         row = ctk.CTkFrame(
             module_list,
-            fg_color="#f9fbff",
+            fg_color="#f4f6f9",
             border_width=1,
             border_color=COLORS["border"],
             corner_radius=10,
@@ -174,7 +193,7 @@ def create_menu_ui(
 
     ctk.CTkButton(
         actions,
-        text="Deconnexion",
+        text="Déconnexion",
         height=42,
         fg_color=COLORS["danger"],
         hover_color=COLORS["danger_hover"],
