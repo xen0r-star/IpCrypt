@@ -19,6 +19,7 @@ COLORS = {
     "border": "#cfd8e6",
 }
 
+
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
     screen_w = window.winfo_screenwidth()
     screen_h = window.winfo_screenheight()
@@ -58,6 +59,7 @@ def cleanup_window(window: ctk.CTk) -> None:
         # Python 3.14 + CustomTkinter can raise TclError during command cleanup.
         pass
 
+group_entries = []
 
 def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
     row = ctk.CTkFrame(parent, fg_color="transparent")
@@ -79,13 +81,14 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
 
     vcmd = (parent.winfo_toplevel().register(lambda val: val.isdigit() and len(val) <= 3 or val == ""), "%P")
     
-    group_entries = []
     for i in range(4):
         entry = ctk.CTkEntry(inner, width=55, height=36, justify="center", fg_color=COLORS["surface"], border_color=COLORS["border"], validate="key", validatecommand=vcmd)
         entry.pack(side="left")
         group_entries.append(entry)
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 18, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
+
+result_labels = {}
 
 def lire_octets(group: list) -> list | None:
     """Extrait et valide les 4 octets d'un groupe de champs Entry."""
@@ -169,16 +172,48 @@ def create_ip_verification_ui(on_back=None):
         ctk.CTkLabel(row, text=label_text + " :", width=180, anchor="e", font=("Segoe UI", 13), text_color=COLORS["text"]).pack(side="left")
         ctk.CTkLabel(row, text="-", anchor="w", font=("Segoe UI", 13, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=10)
 
+    def on_verify():
+    # On utilise directement notre liste all_entries
+        octets = lire_octets(group_entries)
+        classeAdresse = "N/A"
+        
+        if octets:
+            classe = definirClasse(octets[0])
+            
+            # Mise à jour des labels via le dictionnaire
+            result_labels["Classe du reseau"].configure(text=classe, text_color=COLORS["primary"])
+            result_labels["Masque du reseau"].configure(text=definirMasque(classe))
+            result_labels["Adresse reseau"].configure(text=adresseReseau(octets, classe))
+            # ... continue pour les autres champs
+        else:
+            # Optionnel : Message d'erreur si IP invalide
+            result_labels["Classe du reseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
+
+        
+
+    def on_clear():
+        def clear_recursive(container):
+            for widget in container.winfo_children():
+                # Si c'est un champ de saisie, on l'efface
+                if isinstance(widget, ctk.CTkEntry):
+                    widget.delete(0, "end")
+                # Si c'est un cadre, on regarde à l'intérieur
+                elif isinstance(widget, (ctk.CTkFrame, ctk.CTkScrollableFrame)):
+                    clear_recursive(widget)
+        clear_recursive(inputs_section)
+        # Reset les labels de résultats ici si besoin
+
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(14, 0))
 
-    ctk.CTkButton(
+    ctk.CTkButton( 
         actions,
         text="Vérifier",
         height=42,
         fg_color=COLORS["primary"],
         hover_color=COLORS["primary_hover"],
         font=("Segoe UI", 14, "bold"),
+        command=on_verify,
     ).pack(side="left", expand=True, fill="x", padx=(0, 8))
 
     ctk.CTkButton(
@@ -188,6 +223,7 @@ def create_ip_verification_ui(on_back=None):
         fg_color=COLORS["danger"],
         hover_color=COLORS["danger_hover"],
         font=("Segoe UI", 14, "bold"),
+        command=on_clear,
     ).pack(side="left", fill="x", padx=(8, 0))
 
     ctk.CTkButton(
