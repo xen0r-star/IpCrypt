@@ -17,34 +17,17 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-# ancienne couleur - laissée si besoin
-# COLORS = {
-#     "bg": "#eef1f6",
-#     "surface": "#ffffff",
-#     "panel": "#f6f8fc",
-#     "primary": "#3f5fa8",
-#     "primary_hover": "#355190",
-#     "danger": "#b05f5f",
-#     "danger_hover": "#994f4f",
-#     "text": "#16233b",
-#     "muted": "#5a6b86",
-#     "border": "#cfd8e6",
-# }
-
 COLORS = {
-    "bg": "#f8f9fa",
+    "bg": "#eef1f6",
     "surface": "#ffffff",
     "panel": "#f6f8fc",
-    "primary": "#2c5aa0",
-    "primary_hover": "#1c4a80",
-    "danger": "#a94442",
-    "danger_hover": "#8c3a3a",
+    "primary": "#3f5fa8",
+    "primary_hover": "#355190",
+    "danger": "#b05f5f",
+    "danger_hover": "#994f4f",
     "text": "#16233b",
-    "muted": "#6a7b86",
-    "border": "#e0e0e0",
-    "field_bg": "#f6f8fc",
-    "success": "#4a8c62",
-    "error": "#a94442",
+    "muted": "#5a6b86",
+    "border": "#cfd8e6",
 }
 
 # Fonction pour centrer la fenêtre sur l'écran
@@ -134,7 +117,7 @@ def exporterTableau(tableauSR):
 #transformation du masque binaire en décimal pour l'affichage dans le tableau et l'exportation
 def binaireDecimal(masqueBinaire):
     octets = [masqueBinaire[i:i+8] for i in range(0, 32, 8)]
-    return ".".join([str(int(o, 2)) for o in octets])
+    return ".".join([str(int(o, 2)).zfill(3) for o in octets])
 
 #construction du tableau CIDR pour l'affichage dans l'interface et l'exportation
 def build_cidr_rows() -> list:
@@ -156,7 +139,7 @@ def create_cidr_table_ui(on_back=None):
     next_action = None
     app.title("Tableau CIDR")
     app.configure(fg_color=COLORS["bg"])
-    app.resizable(False, False)
+    app.resizable(False, False) #a modifier pour que chaque page aie la meme taille
     center_window(app, 980, 700)
 
     def schedule_navigation(callback, *args, **kwargs):
@@ -220,7 +203,7 @@ def create_cidr_table_ui(on_back=None):
         background=COLORS["panel"],
         foreground=COLORS["text"],
         relief="flat",
-        font=("Segoe UI", 11, "bold"),
+        font=("Segoe UI", 14, "bold"),
     )
 
     columns = ("cidr", "binary", "decimal")

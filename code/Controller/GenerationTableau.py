@@ -12,7 +12,7 @@ def binaireDecimal(masqueBinaire):
     # On découpe la chaîne de 32 bits en 4 blocs de 8
     octets = [masqueBinaire[i:i+8] for i in range(0, 32, 8)]
     # On convertit chaque bloc en décimal et on joint par des points
-    return ".".join([str(int(o, 2)) for o in octets])
+    return ".".join([str(int(o, 2)).zfill(3) for o in octets])
 
 matSR = []
 

@@ -4,6 +4,7 @@ from utils import auth_service
 def validate_password_policy(
     password: str,
     *,
+    min_lowercase: int = 1,
     min_uppercase: int = 2,
     min_digits: int = 1,
     min_special: int = 1,
@@ -20,6 +21,10 @@ def validate_password_policy(
 
     if min_length > 0 and len(password) < min_length:
         errors.append(f"Minimum {min_length} caracteres")
+
+    lowercase_count = sum(1 for char in password if char.islower())
+    if lowercase_count < min_lowercase:
+        errors.append(f"Minimum {min_lowercase} minuscule(s)")
 
     uppercase_count = sum(1 for char in password if char.isupper())
     if uppercase_count < min_uppercase:

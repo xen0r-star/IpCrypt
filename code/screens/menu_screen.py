@@ -6,35 +6,18 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-# ancienne couleur - laisse si besoin
-# COLORS = {
-#     "bg": "#eef1f6",
-#     "surface": "#ffffff",
-#     "primary": "#3f5fa8",
-#     "primary_hover": "#355190",
-#     # "danger": "#d9484897",
-#     # "danger_hover": "#b93a3a",
-#     "danger": "#b05f5f",
-#     "danger_hover": "#994f4f",
-#     "text": "#16233b",
-#     "muted": "#5a6b86",
-#     "border": "#cfd8e6",
-# }
-
 COLORS = {
-    "bg": "#f8f9fa",
+    "bg": "#eef1f6",
     "surface": "#ffffff",
-    "primary": "#2c5aa0",
-    "primary_hover": "#1c4a80",
-    "danger": "#a94442",
-    "danger_hover": "#8c3a3a",
+    "primary": "#3f5fa8",
+    "primary_hover": "#355190",
+    # "danger": "#d9484897",
+    # "danger_hover": "#b93a3a",
+    "danger": "#b05f5f",
+    "danger_hover": "#994f4f",
     "text": "#16233b",
-    "muted": "#6a7b86",
-    "border": "#e0e0e0",
-    "field_bg": "#f6f8fc",
-    "panel": "#f6f8fc",
-    "success": "#4a8c62",
-    "error": "#a94442",
+    "muted": "#5a6b86",
+    "border": "#cfd8e6",
 }
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:

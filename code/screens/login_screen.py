@@ -16,34 +16,17 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-# ancienne couleur - laisse si besoin
-# COLORS = {
-#     "bg": "#eef1f6",
-#     "surface": "#ffffff",
-#     "primary": "#3f5fa8",
-#     "primary_hover": "#355190",
-#     "danger": "#b05f5f",
-#     "danger_hover": "#994f4f",
-#     "text": "#16233b",
-#     "muted": "#5a6b86",
-#     "border": "#cfd8e6",
-#     "field_bg": "#f6f8fc",
-# }
-
 COLORS = {
-    "bg": "#f8f9fa",
+    "bg": "#eef1f6",
     "surface": "#ffffff",
-    "primary": "#2c5aa0",
-    "primary_hover": "#1c4a80",
-    "danger": "#a94442",
-    "danger_hover": "#8c3a3a",
+    "primary": "#3f5fa8",
+    "primary_hover": "#355190",
+    "danger": "#b05f5f",
+    "danger_hover": "#994f4f",
     "text": "#16233b",
-    "muted": "#6a7b86",
-    "border": "#e0e0e0",
+    "muted": "#5a6b86",
+    "border": "#cfd8e6",
     "field_bg": "#f6f8fc",
-    "panel": "#f6f8fc",
-    "success": "#4a8c62",
-    "error": "#a94442",
 }
 
 SPACING = {
@@ -95,7 +78,7 @@ def cleanup_window(window: ctk.CTk) -> None:
 
 def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
     app = ctk.CTk()
-    # On doit mettre le .after pour que l'icône soit appliquée avant le mainloop.
+    # On doit mettre le .after pour que l'icone soit appliquee avant le mainloop.
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
@@ -156,7 +139,7 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
         show="*",
         fg_color=COLORS["field_bg"],
         border_color=COLORS["border"],
-        placeholder_text="Min. 12, 2 majuscules, 1 chiffre, 1 caractère spécial",
+        placeholder_text="Min. 12, 1 minuscule, 2 majuscules, 1 chiffre, 1 caractère spécial",
     )
     entryPassword.pack(fill="x", pady=(6, 10))
 
@@ -178,6 +161,7 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
 
         is_valid, error_message = validate_password_policy(
             valeurPassword,
+            min_lowercase=1,
             min_uppercase=2,
             min_digits=1,
             min_special=1,
