@@ -6,6 +6,38 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+def definirClasse(premOctet):
+    octet=int(premOctet)
+    match octet:
+        case _ if 1 <= octet <= 126:
+            print("Classe A")
+            return "A"
+        case _ if 128 <= octet <= 191:
+            print("Classe B")
+            return "B"
+        case _ if 192 <= octet <= 223:
+            print("Classe C")
+            return "C"
+        case _ if 224 <= octet <= 240:
+            print("Classe D")
+            return "D"
+        case _:
+            print("Classe E")
+            return "E"
+        
+def adresseReseau(segment,classe):
+    match classe:
+        case "A":
+            print(segment[0],".","000",".","000",".","000")
+            print(segment[0],".","255",".","255",".","255")
+        case "B":
+            print(segment[0],".",segment[1],".","000",".","000")
+            print(segment[0],".",segment[1],".","255",".","255")
+        case "C":
+            print(segment[0],".",segment[1],".",segment[2],".","000")
+            print(segment[0],".",segment[1],".",segment[2],".","255")
+
+
 COLORS = {
     "bg": "#eef1f6",
     "surface": "#ffffff",
@@ -182,7 +214,6 @@ def create_ip_verification_ui(on_back=None):
             
             # Mise à jour des labels via le dictionnaire
             result_labels["Classe du reseau"].configure(text=classe, text_color=COLORS["primary"])
-            result_labels["Masque du reseau"].configure(text=definirMasque(classe))
             result_labels["Adresse reseau"].configure(text=adresseReseau(octets, classe))
             # ... continue pour les autres champs
         else:

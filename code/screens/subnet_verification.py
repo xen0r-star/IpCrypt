@@ -3,6 +3,33 @@ import customtkinter as ctk
 from pathlib import Path
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
+def verificationIP (ip):
+    #Découpage en plusieurs segments
+    segment = ip.split(".")
+    if len(segment) != 4: #S'il n'y a pas 4 segments l'adresse est invalide
+        print("On ne peut couper l'adresse en quatre segment")
+        return False
+    
+    for s in segment:
+        if len(s) > 3: #Si la longueur d'un des segments est supérieur à 3
+            print ("Un des segment fait plus de 3 chiffres")
+            return False
+        if not s.isdigit(): #Si l'un des segments n'est pas composés que de chiffres
+            print("Il y a des lettres ou caracteres speciaux dans l'adresse")
+            return False
+        if int(s) < 0 or int(s) > 255: #Si le chiffres d'un des segments n'est pas entre 0 et 255
+            print("un des segment est inférieur à 0 où supérieur à 255")
+            return False
+        
+    if int(segment[3]) == 255:
+        print("L'adresse insérée est une IP broadcast")
+        return False
+    elif int(segment[3]) == 0:
+        print("L'adresse insérée est une adresse réseau")
+        return False
+    
+    return True
+
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
@@ -177,17 +204,6 @@ def create_ip_verification_ui(on_back=None):
         octets = lire_octets(group_entries)
         classeAdresse = "N/A"
         
-        if octets:
-            classe = definirClasse(octets[0])
-            
-            # Mise à jour des labels via le dictionnaire
-            result_labels["Classe du reseau"].configure(text=classe, text_color=COLORS["primary"])
-            result_labels["Masque du reseau"].configure(text=definirMasque(classe))
-            result_labels["Adresse reseau"].configure(text=adresseReseau(octets, classe))
-            # ... continue pour les autres champs
-        else:
-            # Optionnel : Message d'erreur si IP invalide
-            result_labels["Classe du reseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
 
         
 
