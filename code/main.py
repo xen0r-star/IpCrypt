@@ -50,7 +50,7 @@ def launch(splash: tk.Tk) -> None:
     from screens.login_screen      import create_connexion_ui
     from screens.register_screen   import create_inscription_ui
     from screens.menu_screen       import create_menu_ui
-    from screens.subnet_inspector  import create_ip_verification_ui
+    from code.screens.definer_classe  import create_ip_verification_ui
     from screens.network_comparator import create_ip_association_ui
     from screens.cidr_explorer     import create_cidr_table_ui
     from utils.auth_service        import hashage_motDePasse, recuperation_utilisateur_database
