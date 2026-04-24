@@ -48,9 +48,9 @@ def show_splash() -> tk.Tk:
 def launch(splash: tk.Tk) -> None:
     # imports lourds ici — CTk, PIL, etc. chargés pendant que le splash est visible
     from screens.login_screen      import create_connexion_ui
+    from screens.first_connection  import create_first_connection_ui
     from screens.register_screen   import create_inscription_ui
     from screens.menu_screen       import create_menu_ui
-    from code.screens.definer_classe  import create_ip_verification_ui
     from screens.network_comparator import create_ip_association_ui
     from screens.cidr_explorer     import create_cidr_table_ui
     from utils.auth_service        import hashage_motDePasse, recuperation_utilisateur_database
@@ -75,7 +75,12 @@ def launch(splash: tk.Tk) -> None:
         if hashage_motDePasse(password, "connexion_ui", username):
             user = recuperation_utilisateur_database(username)
             db_is_admin = bool(user.get("is_admin")) if user else False
-            open_menu(is_admin=db_is_admin, username=username)
+            is_first_connexion = bool(user.get("is_firstconnexion")) if user else False
+
+            if is_first_connexion:
+                open_first_connexion(username=username, is_admin=db_is_admin)
+            else:
+                open_menu(is_admin=db_is_admin, username=username)
         else:
             messagebox.showerror("Erreur d'authentification", "Nom d'utilisateur ou mot de passe incorrect")
 
@@ -92,6 +97,17 @@ def launch(splash: tk.Tk) -> None:
         else:
             messagebox.showerror("Erreur", "Erreur lors de la création du compte")
 
+    def on_first_connexion_success(username=None, new_password=None, is_admin=False):
+        if not username or not new_password:
+            messagebox.showerror("Erreur", "Donnees de changement de mot de passe incompletes")
+            return
+
+        if hashage_motDePasse(new_password, "first_connexion_ui", username):
+            messagebox.showinfo("Succes", "Mot de passe modifie avec succes.")
+            open_menu(is_admin=is_admin, username=username)
+        else:
+            messagebox.showerror("Erreur", "Impossible de modifier le mot de passe.")
+
     def open_connexion() -> None:
         #Affiche la page de connexion
         #verifie que le login est correcte
@@ -104,6 +120,18 @@ def launch(splash: tk.Tk) -> None:
         back_callback = open_menu if from_menu else open_connexion
         back_text     = "Retour menu" if from_menu else "Connexion"
         create_inscription_ui(on_signup_success=on_signup_success, on_back=back_callback, back_button_text=back_text)
+
+    def open_first_connexion(username: str, is_admin: bool):
+        create_first_connection_ui(
+            username=username,
+            on_password_changed=lambda username, new_password: on_first_connexion_success(
+                username=username,
+                new_password=new_password,
+                is_admin=is_admin,
+            ),
+            on_back=open_connexion,
+            back_button_text="Annuler",
+        )
 
     def open_menu(is_admin=None, username=None):
         nonlocal current_is_admin

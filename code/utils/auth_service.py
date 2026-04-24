@@ -38,7 +38,7 @@ def get_connection():
 def recuperation_motDePasse_database(username):
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            sql = "SELECT username, password, is_admin FROM users WHERE username=%s"
+            sql = "SELECT username, password, is_admin, is_firstconnexion FROM users WHERE username=%s"
             cursor.execute(sql, (username,))
             return cursor.fetchone()
 
@@ -54,6 +54,16 @@ def inscription_dans_database(username:str, profilUser:str, passwordHashed:str) 
             cursor.execute(sql, (username, passwordHashed, is_admin))
         connection.commit()
     return True
+
+
+def update_motDePasse_premiere_connexion_database(username: str, passwordHashed: str) -> bool:
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            sql = "UPDATE users SET password=%s, is_firstconnexion=FALSE WHERE username=%s"
+            cursor.execute(sql, (passwordHashed, username))
+            updated_rows = cursor.rowcount
+        connection.commit()
+    return updated_rows == 1
 
 #verification du mot de passe 
 def verification_motDePasse(passwordToVerify: str, passwordHashed: str) -> bool:
@@ -82,6 +92,10 @@ def hashage_motDePasse(motDePasseEnClaire: str, source: str, username: str, prof
         elif source == "inscription_ui":
             motDePasseHashe = pwdHasher.hash(motDePasseEnClaire)
             return inscription_dans_database(username, profilUser, motDePasseHashe)
+
+        elif source == "first_connexion_ui":
+            motDePasseHashe = pwdHasher.hash(motDePasseEnClaire)
+            return update_motDePasse_premiere_connexion_database(username, motDePasseHashe)
         
         else:
             return False
