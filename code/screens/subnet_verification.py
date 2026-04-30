@@ -3,32 +3,56 @@ import customtkinter as ctk
 from pathlib import Path
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
-def verificationIP (ip):
-    #Découpage en plusieurs segments
-    segment = ip.split(".")
-    if len(segment) != 4: #S'il n'y a pas 4 segments l'adresse est invalide
-        print("On ne peut couper l'adresse en quatre segment")
-        return False
-    
-    for s in segment:
-        if len(s) > 3: #Si la longueur d'un des segments est supérieur à 3
-            print ("Un des segment fait plus de 3 chiffres")
-            return False
-        if not s.isdigit(): #Si l'un des segments n'est pas composés que de chiffres
-            print("Il y a des lettres ou caracteres speciaux dans l'adresse")
-            return False
-        if int(s) < 0 or int(s) > 255: #Si le chiffres d'un des segments n'est pas entre 0 et 255
-            print("un des segment est inférieur à 0 où supérieur à 255")
-            return False
+def definirClasse(premOctet):
+    octet=int(premOctet)
+    match octet:
+        case _ if 1 <= octet <= 126:
+            print("Classe A")
+            return "A"
+        case _ if 128 <= octet <= 191:
+            print("Classe B")
+            return "B"
+        case _ if 192 <= octet <= 223:
+            print("Classe C")
+            return "C"
+        case _ if 224 <= octet <= 240:
+            print("Classe D")
+            return "D"
+        case _:
+            print("Classe E")
+            return "E"
         
-    if int(segment[3]) == 255:
-        print("L'adresse insérée est une IP broadcast")
-        return False
-    elif int(segment[3]) == 0:
-        print("L'adresse insérée est une adresse réseau")
-        return False
+def verificationIP (segments,classe):
+    # On convertit les segments en entiers pour les calculs
+    s = [int(x) for x in segments]
     
-    return True
+    match classe:
+        case "A":
+            # En Classe A, le réseau est le 1er octet. 
+            # Broadcast si les 3 derniers sont 255. Réseau si les 3 derniers sont 0.
+            if s[1] == 255 and s[2] == 255 and s[3] == 255:
+                return "L'adresse insérée est une IP broadcast (Classe A)"
+            elif s[1] == 0 and s[2] == 0 and s[3] == 0:
+                return "L'adresse insérée est une adresse réseau (Classe A)"
+        
+        case "B":
+            # En Classe B, le réseau est sur les 2 premiers octets.
+            if s[2] == 255 and s[3] == 255:
+                return "L'adresse insérée est une IP broadcast (Classe B)"
+            elif s[2] == 0 and s[3] == 0:
+                return "L'adresse insérée est une adresse réseau (Classe B)"
+        
+        case "C":
+            # En Classe C, seul le dernier octet varie pour le réseau/broadcast.
+            if s[3] == 255:
+                return "L'adresse insérée est une IP broadcast (Classe C)"
+            elif s[3] == 0:
+                return "L'adresse insérée est une adresse réseau (Classe C)"
+        
+        case _:
+            return "Classe non supportée pour cette vérification"
+
+    return "Adresse IP d'hôte valide"
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -128,6 +152,7 @@ def lire_octets(group: list) -> list | None:
     return octets
     
 def create_ip_verification_ui(on_back=None):
+    group_entries.clear()
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
@@ -135,7 +160,7 @@ def create_ip_verification_ui(on_back=None):
     app.title("IP Verification")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(False, False)
-    center_window(app, 900, 700)
+    center_window(app, 600, 450)
 
     def schedule_navigation(callback, *args, **kwargs):
         nonlocal next_action
@@ -144,7 +169,7 @@ def create_ip_verification_ui(on_back=None):
         app.quit()
 
     container = ctk.CTkFrame(app, fg_color="transparent")
-    container.pack(fill="both", expand=True, padx=28, pady=20)
+    container.pack(fill="x", padx=28, pady=20) 
 
     ctk.CTkLabel(
         container,
@@ -181,30 +206,33 @@ def create_ip_verification_ui(on_back=None):
         border_color=COLORS["border"],
         corner_radius=12,
     )
-    results.pack(fill="both", expand=True, padx=20, pady=(0, 14))
+    results.pack(fill="x", padx=20, pady=(0, 20)) 
 
     fields = [
-        "Classe du réseau",
-        "Masque du réseau",
-        "Adresse réseau",
-        "Adresse broadcast",
-        "Premier hôte",
-        "Dernier hôte",
-        "Nombre d'hôtes",
+        "Résultat de la vérification"
     ]
 
     for label_text in fields:
         row = ctk.CTkFrame(results, fg_color="transparent")
         row.pack(fill="x", padx=16, pady=5)
         ctk.CTkLabel(row, text=label_text + " :", width=180, anchor="e", font=("Segoe UI", 13), text_color=COLORS["text"]).pack(side="left")
-        ctk.CTkLabel(row, text="-", anchor="w", font=("Segoe UI", 13, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=10)
+        
+        # On crée le label de valeur
+        val_label = ctk.CTkLabel(row, text="-", anchor="w", font=("Segoe UI", 13, "bold"), text_color=COLORS["muted"])
+        val_label.pack(side="left", padx=10)
+        
+        # ON ENREGISTRE ICI DANS LE DICTIONNAIRE
+        result_labels[label_text] = val_label
 
     def on_verify():
-    # On utilise directement notre liste all_entries
         octets = lire_octets(group_entries)
-        classeAdresse = "N/A"
-        
 
+        if octets :
+            classe = definirClasse(octets[0])
+            resultVerif = verificationIP(octets,classe)
+            result_labels["Résultat de la vérification"].configure(text=resultVerif, text_color=COLORS["primary"])
+        else : 
+            result_labels["Résultat de la vérification"].configure(text="Adresse non valide", text_color=COLORS["danger"])
         
 
     def on_clear():
