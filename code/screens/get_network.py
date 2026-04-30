@@ -7,19 +7,14 @@ def definirClasse(premOctet):
     octet=int(premOctet)
     match octet:
         case _ if 1 <= octet <= 126:
-            print("Classe A")
             return "A"
         case _ if 128 <= octet <= 191:
-            print("Classe B")
             return "B"
         case _ if 192 <= octet <= 223:
-            print("Classe C")
             return "C"
         case _ if 224 <= octet <= 240:
-            print("Classe D")
             return "D"
         case _:
-            print("Classe E")
             return "E"
 
 def defAdresseReseau(segment,classe):
@@ -30,6 +25,21 @@ def defAdresseReseau(segment,classe):
             return f"{segment[0]}.{segment[1]}.0.0"
         case "C":
             return f"{segment[0]}.{segment[1]}.{segment[2]}.0"
+        case _:
+            return "N/A"
+        
+def defAdresseSousReseau(segment,masque,classe):
+    # On convertit les chaînes en entiers, on fait le ET binaire, puis on repasse en string
+    res = []
+    for i in range(4):
+        octet_ip = int(segment[i])
+        octet_masque = int(masque[i])
+        # Calcul du ET logique
+        resultat_octet = octet_ip & octet_masque
+        res.append(str(resultat_octet))
+    
+    # On joint le tout avec des points
+    return ".".join(res)
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -213,10 +223,11 @@ def create_get_network_ui(on_back=None):
         if octetsIP and octetsMasque:
             classe = definirClasse(octetsIP[0])
             adresseReseau = defAdresseReseau(octetsIP, classe)
+            adresseSousReseau = defAdresseSousReseau(octetsIP,octetsMasque,classe)
             # Mise à jour des labels via le dictionnaire
             result_labels["Adresse réseau"].configure(text=adresseReseau, text_color=COLORS["primary"])
-            result_labels["Adresse sous-réseau"].configure(text=adresseReseau, text_color=COLORS["primary"])
-            # ... continue pour les autres champs
+            result_labels["Adresse sous-réseau"].configure(text=adresseSousReseau, text_color=COLORS["primary"])
+
         else:
             # Optionnel : Message d'erreur si IP invalide
             result_labels["Adresse réseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
