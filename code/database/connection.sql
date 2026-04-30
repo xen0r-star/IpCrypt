@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
 
+-- ajout commentaire test webhook
 INSERT INTO users (username, password, is_admin) VALUES
 ('vdp_corentin', '$argon2id$v=19$m=65536,t=3,p=1$REPLACE_WITH_REAL_HASH$REPLACE_WITH_REAL_HASH', TRUE, FALSE),
 ('cnv_evan', '$argon2id$v=19$m=65536,t=3,p=1$REPLACE_WITH_REAL_HASH$REPLACE_WITH_REAL_HASH', TRUE, FALSE),
