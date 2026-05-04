@@ -130,7 +130,7 @@ def lire_octets(group: list) -> list | None:
         octets.append(str(int(val)).zfill(3))
     return octets
     
-def create_definer_class_ui(on_back=None):
+def create_get_mask_ui(on_back=None):
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
@@ -279,4 +279,4 @@ def create_definer_class_ui(on_back=None):
         next_action()
 
 if __name__ == "__main__":
-    create_definer_class_ui()
+    create_get_mask_ui()
