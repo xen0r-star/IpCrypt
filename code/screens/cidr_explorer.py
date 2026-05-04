@@ -91,7 +91,6 @@ def exporterTableau(tableauSR):
             )
 
         if not chemin:
-            messagebox.showwarning("Annulé", "Aucun dossier sélectionné.")
             return None
 
         if _PANDAS_AVAILABLE:

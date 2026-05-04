@@ -96,7 +96,7 @@ def lire_octets(group: list) -> list | None:
         octets.append(str(int(val)).zfill(3))
     return octets
 
-def calcule_adresse_reseau(ip1, masque1, ip2, masque2) -> tuple[list, list,str]:
+def calcule_adresse_reseau(ip1, masque1, ip2, masque2) -> tuple[list, list, str, bool]:
     """Calcule les adresses réseau par AND bit à bit : IP & Masque."""
     reseau1 = [int(ip1[i]) & int(masque1[i]) for i in range(4)]
     reseau2 = [int(ip2[i]) & int(masque2[i]) for i in range(4)]
@@ -117,7 +117,7 @@ def calcule_adresse_reseau(ip1, masque1, ip2, masque2) -> tuple[list, list,str]:
     else:
         verdict = "A et B ne se voient pas."
 
-    return reseau1, reseau2, verdict
+    return reseau1, reseau2, verdict, (a_voit_b and b_voit_a)
 
 def create_ip_association_ui(on_back=None):
     app = ctk.CTk()
@@ -188,11 +188,10 @@ def create_ip_association_ui(on_back=None):
             result_label.configure(text="Erreur : un ou plusieurs octets sont invalides (0-255).", text_color=COLORS["error"])
             return
 
-        reseau1, reseau2, verdict = calcule_adresse_reseau(ip1, masque1, ip2, masque2)
+        reseau1, reseau2, verdict, meme_reseau = calcule_adresse_reseau(ip1, masque1, ip2, masque2)
 
         r1_str = '.'.join(str(octet).zfill(3) for octet in reseau1)
         r2_str = '.'.join(str(octet).zfill(3) for octet in reseau2)
-        meme_reseau = reseau1 == reseau2
 
         couleur = COLORS["success"] if meme_reseau else COLORS["error"]
 

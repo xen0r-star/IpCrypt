@@ -39,7 +39,9 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
 
 
 def cleanup_window(window: ctk.CTk) -> None:
-    
+    # CustomTkinter laisse des callbacks after() en vie (animations, DPI checks).
+    # Si on détruit la fenêtre sans les annuler, Tk fire sur des widgets morts
+    # → TclError "invalid command name". On draine d'abord, puis destroy.
     try:
         if window.winfo_exists():
             window.withdraw()
@@ -80,6 +82,8 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
     app.resizable(False, False)
     center_window(app, 600, 520)
 
+    # Pattern de navigation différée : on stocke le callback, on quitte mainloop,
+    # cleanup_window() s'exécute, puis on appelle le callback dans un contexte propre.
     def schedule_navigation(callback, *args, **kwargs):
         nonlocal next_action
         if callable(callback):
@@ -148,6 +152,8 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
     show_password_var = BooleanVar(value=False)
 
     def toggle_password_visibility():
+        # Seul le premier champ se démasque : l'utilisateur voit ce qu'il tape,
+        # puis doit ressaisir de mémoire dans le champ de confirmation (toujours masqué).
         show_char = "" if show_password_var.get() else "*"
         entry_new_password.configure(show=show_char)
 
@@ -158,7 +164,7 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
         variable=show_password_var,
         command=toggle_password_visibility,
     ).pack(anchor="w")
-    
+
 
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(16, 0))
@@ -175,6 +181,8 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
             messagebox.showwarning("Mot de passe invalide", "Les deux mots de passe saisis sont differents.")
             return
 
+        # Validation de policy uniquement ici (changement de mot de passe),
+        # jamais à la connexion.
         is_valid, error_message = validate_password_policy(
             new_password,
             min_lowercase=1,
@@ -218,8 +226,9 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
         next_action()
 
 
+# Alias mort — main.py importe create_inscription_ui depuis register_screen.
+# Conservé uniquement si un autre module importe encore depuis first_connection.
 def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text="Connexion"):
-    # Alias conserve pour eviter de casser les imports existants.
     create_first_connection_ui(
         username="",
         on_password_changed=on_signup_success,

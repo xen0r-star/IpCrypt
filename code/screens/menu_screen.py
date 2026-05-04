@@ -29,6 +29,9 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
 
 
 def cleanup_window(window: ctk.CTk) -> None:
+    # CustomTkinter laisse des callbacks after() en vie (animations, DPI checks).
+    # Si on détruit la fenêtre sans les annuler, Tk fire sur des widgets morts
+    # → TclError "invalid command name". On draine d'abord, puis destroy.
     try:
         if window.winfo_exists():
             window.withdraw()
@@ -77,6 +80,9 @@ def create_menu_ui(
     app.resizable(False, False)
     center_window(app, 720, 520)
 
+    # Pattern de navigation différée : on stocke le callback, on quitte mainloop,
+    # cleanup_window() s'exécute, puis on appelle le callback dans un contexte propre.
+    # Appeler le callback directement ici planterait car mainloop() n'est pas terminé.
     def schedule_navigation(callback, *args, **kwargs):
         nonlocal next_action
         if callable(callback):
@@ -86,7 +92,6 @@ def create_menu_ui(
     container = ctk.CTkFrame(app, fg_color="transparent")
     container.pack(fill="both", expand=True, padx=28, pady=20)
 
-    # Style donné via CustomTkinter, pas besoin de faire du CSS ou du ttk.
     ctk.CTkLabel(
         container,
         text="Menu principal",
@@ -115,6 +120,7 @@ def create_menu_ui(
         "IP Association",
         "CIDR Table",
     ]
+    # "Inscription" visible seulement pour les admins — inséré en tête pour mise en évidence.
     if is_admin:
         modules.insert(0, "Inscription")
 
@@ -151,6 +157,7 @@ def create_menu_ui(
 
     def on_open_selected_module():
         selected = modules_var.get()
+        # Table de dispatch : évite une chaîne if/elif fragile à l'ajout de modules.
         routes = {
             "IP Verification": on_open_ip_verification,
             "IP Association": on_open_ip_association,
