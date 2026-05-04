@@ -131,6 +131,7 @@ def lire_octets(group: list) -> list | None:
     return octets
     
 def create_get_mask_ui(on_back=None):
+    group_entries.clear()
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))

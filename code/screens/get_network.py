@@ -28,7 +28,7 @@ def defAdresseReseau(segment,classe):
         case _:
             return "N/A"
         
-def defAdresseSousReseau(segment,masque,classe):
+def defAdresseSousReseau(segment, masque):
     # On convertit les chaînes en entiers, on fait le ET binaire, puis on repasse en string
     res = []
     for i in range(4):
@@ -139,6 +139,7 @@ def lire_octets(group: list) -> list | None:
     return octets
     
 def create_get_network_ui(on_back=None):
+    group_entries.clear()
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
@@ -216,14 +217,13 @@ def create_get_network_ui(on_back=None):
         result_labels[label_text] = val_label
 
     def on_verify():
-    # On utilise directement notre liste all_entries
-        octetsIP = lire_octets(group_entries)
-        octetsMasque =  lire_octets(group_entries)
+        octetsIP     = lire_octets(group_entries[:4])
+        octetsMasque = lire_octets(group_entries[4:])
         
         if octetsIP and octetsMasque:
             classe = definirClasse(octetsIP[0])
             adresseReseau = defAdresseReseau(octetsIP, classe)
-            adresseSousReseau = defAdresseSousReseau(octetsIP,octetsMasque,classe)
+            adresseSousReseau = defAdresseSousReseau(octetsIP, octetsMasque)
             # Mise à jour des labels via le dictionnaire
             result_labels["Adresse réseau"].configure(text=adresseReseau, text_color=COLORS["primary"])
             result_labels["Adresse sous-réseau"].configure(text=adresseSousReseau, text_color=COLORS["primary"])

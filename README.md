@@ -8,9 +8,11 @@ Desktop network tool — Python + CustomTkinter.
 IP verification, subnet analysis, cross-network association, CIDR table, user management.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![CustomTkinter](https://img.shields.io/badge/CustomTkinter-5.x-2CA5E0?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Phase%201-orange?style=for-the-badge)
+![CustomTkinter](https://img.shields.io/badge/CustomTkinter-5.2.2-2CA5E0?style=for-the-badge)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-psycopg3-336791?style=for-the-badge&logo=postgresql&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Phase%202-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Academic-lightgrey?style=for-the-badge)
+[![Discord Push](https://github.com/Coco-Lapin/IpCrypt/actions/workflows/discord_push.yml/badge.svg)](https://github.com/Coco-Lapin/IpCrypt/actions/workflows/discord_push.yml)
 
 </div>
 
@@ -27,7 +29,7 @@ IP verification, subnet analysis, cross-network association, CIDR table, user ma
 
 - [About](#about)
 - [Features](#features)
-- [Demo](#demo)
+- [Screenshots](#screenshots)
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
 - [Tech Stack](#tech-stack)
@@ -43,7 +45,7 @@ IP verification, subnet analysis, cross-network association, CIDR table, user ma
 IpCrypt is a Python desktop application built for the BAC2 Systems & Networks curriculum.
 It provides a GUI-first approach to common IP addressing tasks — class detection, subnet calculation, cross-network visibility, and CIDR table generation — all without relying on any Python networking library (`ipaddress`, `socket`, etc.).
 
-User access is controlled via login (admin / client profiles). Accounts and hashed passwords are persisted in a MySQL database. Admins get access to the user registration module.
+User access is controlled via login (admin / client profiles). Accounts and hashed passwords are persisted in a PostgreSQL database. Admins get access to the user registration module. Newly created accounts are forced to change their password on first login.
 
 ---
 
@@ -53,11 +55,12 @@ User access is controlled via login (admin / client profiles). Accounts and hash
 |---|---|---|
 | Splash screen | Done | Animated loading screen on startup |
 | Login | Done | Username + password with policy enforcement |
+| First connection | Done | Forced password change on first login for admin-created accounts |
 | Registration | Done | Admin-only user creation with profile selection |
 | Menu | Done | Role-aware navigation (admin vs client) |
-| IP Verification | In progress | Class, reserved/private flags, broadcast, host range |
+| IP Verification | Done | Class detection, broadcast/network/host classification |
 | IP Association | Done | Bilateral cross-network visibility check |
-| CIDR Table | Done | /8-/30 matrix with binary + decimal + Excel export |
+| CIDR Table | Done | /8–/30 matrix with binary + decimal + Excel export |
 
 ---
 
@@ -85,19 +88,11 @@ User access is controlled via login (admin / client profiles). Accounts and hash
 
 ---
 
-## Demo
-
-<div align="center">
-  <img src="./code/images/demo.gif" alt="IpCrypt Demo" width="600"/>
-</div>
-
-> 📝 **Add your demo GIF here:** Place a `demo.gif` file in the `code/images/` directory to show the application workflow (e.g., login → menu → module navigation).
-
----
-
 ## Architecture
 
 The app uses a **sequential window model**: each screen is a `ctk.CTk()` instance that calls `mainloop()`, cleans up, then invokes a navigation callback to open the next screen. No multi-threading, no persistent root window.
+
+All screens use a **deferred navigation pattern**: button clicks store a callback in `next_action`, call `app.quit()` to exit `mainloop()`, then `cleanup_window()` drains pending `after()` callbacks before `destroy()` to avoid `TclError` on dead widgets. Only after full cleanup is the next screen opened.
 
 ### Navigation flow
 
@@ -106,12 +101,15 @@ flowchart LR
     A([main.py]) --> B[Splash]
     B --> C[login_screen]
 
-    C -->|login success| D[menu_screen]
+    C -->|login OK, first login| FC[first_connection]
+    C -->|login OK| D[menu_screen]
+    FC -->|password changed| D
+    FC -->|cancel| C
     D -->|logout| C
 
     subgraph modules["Modules"]
         direction TB
-        F[subnet_inspector]
+        F[subnet_verification]
         G[network_comparator]
         H[cidr_explorer]
         E[register_screen]
@@ -139,8 +137,9 @@ graph LR
     subgraph screens["Screens"]
         CX(login_screen)
         IN(register_screen)
+        FC(first_connection)
         MN(menu_screen)
-        IV(subnet_inspector)
+        IV(subnet_verification)
         IA(network_comparator)
         CT(cidr_explorer)
     end
@@ -152,18 +151,20 @@ graph LR
 
     subgraph ext["External libs"]
         AR([argon2-cffi])
-        MY([pymysql])
-        PD([pandas / xlsxwriter])
+        PG([psycopg])
+        PD([pandas])
         CTK([customtkinter])
+        DOT([python-dotenv])
     end
 
-    MAIN --> CX & IN & MN & IV & IA & CT
+    MAIN --> CX & IN & FC & MN & IV & IA & CT
     MAIN --> PV
     CX --> PP
     IN --> PP
-    PV --> AR & MY
+    FC --> PP
+    PV --> AR & PG & DOT
     CT --> PD
-    CX & IN & MN & IV & IA & CT --> CTK
+    CX & IN & FC & MN & IV & IA & CT --> CTK
 ```
 
 ---
@@ -172,24 +173,37 @@ graph LR
 
 ```text
 IpCrypt/
-├── main.py
-├── screens/
-│   ├── login_screen.py          # was connexion_ui.py
-│   ├── register_screen.py       # was inscription_ui.py
-│   ├── menu_screen.py           # was menu_ui.py
-│   ├── subnet_inspector.py      # was ip_verification_ui.py  — class detection, broadcast, host range
-│   ├── network_comparator.py    # was ip_association_ui.py   — AND-based network calc, bilateral check
-│   └── cidr_explorer.py         # was cidr_table_ui.py       — CIDR matrix, binary↔decimal, xlsx export
-├── utils/
-│   ├── auth_policy.py           # was password_policy.py
-│   └── auth_service.py          # was password_verification.py — argon2 hashing + DB ops
-├── database/
-│   └── connection.sql
-├── images/
-│   ├── iconeIpCrypt.ico
-│   ├── menuIpCrypt.ico
-│   └── menuIpCrypt.png
-└── requirements.txt
+├── .env.example                    # DB credentials template
+├── code/
+│   ├── main.py                     # Entry point — splash, navigation callbacks
+│   ├── requirements.txt
+│   ├── screens/
+│   │   ├── login_screen.py         # Login form + credential check
+│   │   ├── first_connection.py     # Forced password change on first login
+│   │   ├── register_screen.py      # Admin-only user creation
+│   │   ├── menu_screen.py          # Role-aware module selector
+│   │   ├── subnet_verification.py  # IP class + broadcast/network/host check
+│   │   ├── network_comparator.py   # AND-based network calc, bilateral visibility
+│   │   ├── cidr_explorer.py        # CIDR matrix /8–/30, xlsx export
+│   │   ├── definer_classe.py       # Standalone: class + public/private detection
+│   │   ├── get_mask.py             # Standalone: classful mask from IP
+│   │   └── get_network.py          # Standalone: network + subnet address calc
+│   ├── utils/
+│   │   ├── auth_policy.py          # Password rule validator (parametric)
+│   │   └── auth_service.py         # Argon2 hashing + PostgreSQL ops
+│   ├── Controller/                 # Legacy / experimental controllers (not wired to main)
+│   │   ├── GenerationTableau.py
+│   │   ├── InfosIP.py
+│   │   ├── MenuHome.py
+│   │   ├── inscription_controller.py
+│   │   ├── ip_association.py
+│   │   └── menu_controller.py
+│   ├── database/
+│   │   └── connection.sql          # PostgreSQL schema
+│   └── images/
+│       ├── iconeIpCrypt.ico
+│       ├── menuIpCrypt.ico
+│       └── menuIpCrypt.png
 ```
 
 ---
@@ -197,12 +211,55 @@ IpCrypt/
 ## Tech Stack
 
 - **Python 3.10+**
-- **CustomTkinter 5.x** — themed widgets
-- **Pillow** — splash screen image rendering
-- **pandas + xlsxwriter** — CIDR table Excel export
-- **argon2-cffi** — password hashing
-- **pymysql** — MySQL connector
-- No IP networking library used — all calculations are manual bit operations
+- **CustomTkinter 5.2.2** — themed widgets
+- **Pillow 12** — splash screen image rendering
+- **pandas 3** — CIDR table Excel export
+- **argon2-cffi** — password hashing (Argon2)
+- **psycopg 3** (`psycopg[binary]`) — PostgreSQL connector (Supabase)
+- **python-dotenv** — DB credentials via `.env`
+- No IP networking library — all calculations are manual bit operations
+
+---
+
+## Pourquoi sans bibliothèque réseau ?
+
+Python fournit `ipaddress`, `socket`, et d'autres modules qui font tout le travail réseau en une ligne.
+IpCrypt n'en utilise aucun — toutes les opérations sont implémentées à la main :
+
+| Opération | Implémentation |
+|---|---|
+| Détection de classe | Comparaison de plages sur le 1er octet (`1–126` → A, `128–191` → B…) |
+| Masque classful | `match/case` sur la classe détectée |
+| Adresse réseau | ET binaire octet par octet (`IP[i] & masque[i]`) |
+| Adresse broadcast | Remplace les octets hôtes par `255` selon la classe |
+| Table CIDR | Génération des masques par décalage de bits (`0xFFFFFFFF << (32 - prefix)`) |
+| Type d'adresse | Comparaison de plages RFC 1918 (`10.x`, `172.16–31.x`, `192.168.x`) |
+
+C'est un choix pédagogique : l'objectif est de comprendre et recoder la logique réseau, pas de déléguer à une lib.
+
+---
+
+## Schéma de la base de données
+
+Base hébergée sur **Supabase** (PostgreSQL).
+
+```sql
+CREATE TABLE users (
+    user_id          BIGSERIAL PRIMARY KEY,
+    username         VARCHAR(50) NOT NULL UNIQUE,
+    password         TEXT        NOT NULL,          -- hash Argon2id
+    is_admin         BOOLEAN     NOT NULL DEFAULT FALSE,
+    is_firstConnexion BOOLEAN    NOT NULL DEFAULT TRUE
+);
+```
+
+| Colonne | Type | Rôle |
+|---|---|---|
+| `user_id` | BIGSERIAL | Clé primaire auto-incrémentée |
+| `username` | VARCHAR(50) | Identifiant unique de connexion |
+| `password` | TEXT | Hash Argon2id (jamais le mot de passe en clair) |
+| `is_admin` | BOOLEAN | `true` → accès module inscription + toutes fonctions |
+| `is_firstConnexion` | BOOLEAN | `true` → forçage changement de mot de passe au prochain login |
 
 ---
 
@@ -230,24 +287,26 @@ source .venv/bin/activate
 ### 3. Install dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r code/requirements.txt
 ```
 
-Or manually:
+### 4. Configure database credentials
 
 ```bash
-pip install customtkinter pillow pandas xlsxwriter argon2-cffi pymysql
+cp .env.example .env
+# Edit .env with your PostgreSQL host, user, password, dbname
 ```
 
-### 4. Database setup
+### 5. Database setup
 
 ```bash
-mysql -u root -p < database/connection.sql
+psql -U <user> -d <dbname> -f code/database/connection.sql
 ```
 
-### 5. Run
+### 6. Run
 
 ```bash
+cd code
 python main.py
 ```
 
@@ -257,28 +316,35 @@ python main.py
 
 ### Login (`screens/login_screen.py`)
 
-- Username (min 3 chars) + password fields
-- Password show/hide toggle
+- Username + password fields with show/hide toggle
 - Delegates credential verification to `utils/auth_service.py`
-- On success: routes to menu with admin flag
+- On success: checks `is_firstconnexion` flag — routes to first connection screen or menu
+
+### First Connection (`screens/first_connection.py`)
+
+- Triggered automatically when `is_firstconnexion = true` in DB
+- Forces the user to choose a new password before accessing the menu
+- Policy-validated (same rules as registration)
+- Confirm field stays masked by design — user must retype from memory
 
 ### Registration (`screens/register_screen.py`)
 
 - Accessible from menu by admin only
 - Profile selector: Client / Admin
 - Delegates hashing + DB insert to `utils/auth_service.py`
+- Created accounts have `is_firstconnexion = true` — forced password change on first login
 
 ### Menu (`screens/menu_screen.py`)
 
-- Radio-button module selector
+- Radio-button module selector with dispatch table
 - Admin view: Register, IP Verification, IP Association, CIDR Table
 - Client view: IP Verification, IP Association, CIDR Table
 
-### IP Verification (`screens/subnet_inspector.py`)
+### IP Verification (`screens/subnet_verification.py`)
 
-- Octet-by-octet input with validation (0–255)
-- Outputs: IP class, reserved/private flag, class mask, network address, broadcast, first/last host, host count
-- Status: UI done, business logic in progress
+- Octet-by-octet input with real-time key validation (0–255 only, max 3 digits)
+- Detects: broadcast address, network address, or valid host — per class (A/B/C)
+- Class detection via first octet range matching
 
 ### IP Association (`screens/network_comparator.py`)
 
@@ -293,35 +359,46 @@ python main.py
 - Columns: CIDR notation, binary mask (dotted), decimal mask
 - Export to `.xlsx` via file dialog
 
+### Standalone screens (not wired to main navigation)
+
+| File | What it does |
+|---|---|
+| `definer_classe.py` | Class (A–E) + public/private/loopback/APIPA type detection |
+| `get_mask.py` | Classful mask from first octet |
+| `get_network.py` | Network address (classful) + subnet address (AND with mask) |
+
 ---
 
 ## Password Policy
 
-Enforced at both login and registration via `utils/auth_policy.py`:
+Enforced at registration and first connection via `utils/auth_policy.py`:
 
 | Rule | Value |
 |---|---|
 | Minimum length | 12 characters |
+| Minimum lowercase | 1 |
 | Minimum uppercase | 2 |
 | Minimum digits | 1 |
 | Minimum special chars | 1 |
 
-The validator is parametric — thresholds can be adjusted per call site.
+The validator is parametric — thresholds can be adjusted per call site. Policy is **not** checked at login (only at password creation/change).
 
 ---
 
 ## Roadmap
 
-- [ ] Wire IP Verification business logic (class detection, broadcast, host range)
-- [ ] Input validation on IP Verification (currently no octet validation)
-- [ ] Centralize shared UI constants (`COLORS`, `center_window`, `cleanup_window`) into `screens/shared.py`
-- [ ] Move DB credentials to `.env` / environment variables
-- [ ] Unit tests for network calculation functions (`calcule_adresse_reseau`, `build_cidr_rows`)
-- [ ] Add IP class mask deduction (classful)
-- [ ] Restrict admin access enforcement server-side (not just UI flag)
+- [x] IP Verification business logic (class detection, broadcast, host range)
+- [x] Input validation on IP Verification (per-key octet validation 0–255)
+- [x] First connection flow (forced password change for admin-created accounts)
+- [x] DB credentials via `.env` (python-dotenv)
+- [ ] Centralize shared UI helpers (`COLORS`, `center_window`, `cleanup_window`) into `screens/shared.py` — currently duplicated in every screen
+- [ ] Wire standalone screens (`definer_classe`, `get_mask`, `get_network`) into a unified IP Verification module or sub-navigation
+- [ ] Unit tests for network calculation functions (`calcule_adresse_reseau`, `build_cidr_rows`, `verificationIP`)
+- [ ] Server-side admin access enforcement (currently only UI flag)
+- [ ] Clean up or integrate `code/Controller/` legacy files
 
 ---
 
 ## Author
 
-Project built as part of the BAC2 SR curriculum — Phase 1.
+Project built as part of the BAC2 SR curriculum — Phase 2.
