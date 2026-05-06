@@ -63,7 +63,7 @@ def cleanup_window(window: ctk.CTk) -> None:
         pass
 
 
-def create_menu_ui(
+def create_menu_ip_ui(
     on_open_subnet_verification=None,
     on_open_definer_classe=None,
     on_open_get_mask=None,
@@ -199,4 +199,4 @@ def create_menu_ui(
 
 
 if __name__ == "__main__":
-    create_menu_ui()
+    create_menu_ip_ui()

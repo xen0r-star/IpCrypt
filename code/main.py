@@ -52,6 +52,7 @@ def launch(splash: tk.Tk) -> None:
     from screens.register_screen   import create_inscription_ui
     from screens.menu_screen       import create_menu_ui
     from screens.network_comparator import create_ip_association_ui
+    from screens.menu_IP             import create_menu_ip_ui
     from screens.cidr_explorer     import create_cidr_table_ui
     from utils.auth_service        import hashage_motDePasse, recuperation_utilisateur_database
     from tkinter import messagebox
@@ -138,7 +139,7 @@ def launch(splash: tk.Tk) -> None:
         if is_admin is not None:
             current_is_admin = is_admin
         create_menu_ui(
-            on_open_ip_verification=open_ip_verification,
+            on_open_ip_menu=open_ip_menu,
             on_open_ip_association=open_ip_association,
             on_open_inscription=lambda: open_inscription(from_menu=True),
             on_open_cidr_table=open_cidr_table,
@@ -146,7 +147,7 @@ def launch(splash: tk.Tk) -> None:
             is_admin=current_is_admin,
         )
 
-    def open_ip_verification(): create_ip_verification_ui(on_back=open_menu)
+    def open_ip_menu(): create_menu_ip_ui(on_back=open_menu)
     def open_ip_association():  create_ip_association_ui(on_back=open_menu)
     def open_cidr_table():      create_cidr_table_ui(on_back=open_menu)
 
