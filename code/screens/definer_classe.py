@@ -22,6 +22,17 @@ def definirClasse(premOctet):
             print("Classe E")
             return "E"
 
+def definirTypeIP(octets):
+    o1, o2 = int(octets[0]), int(octets[1])
+    
+    if o1 == 10: return "Privée"
+    if o1 == 172 and 16 <= o2 <= 31: return "Privée"
+    if o1 == 192 and o2 == 168: return "Privée"
+    if o1 == 127: return "Réservée (Loopback)"
+    if o1 == 169 and o2 == 254: return "Réservée (APIPA)"
+    
+    return "Publique"
+
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
@@ -119,7 +130,7 @@ def lire_octets(group: list) -> list | None:
         octets.append(str(int(val)).zfill(3))
     return octets
     
-def create_ip_verification_ui(on_back=None):
+def create_definer_class_ui(on_back=None):
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
@@ -127,7 +138,7 @@ def create_ip_verification_ui(on_back=None):
     app.title("IP Verification")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(False, False)
-    center_window(app, 900, 700)
+    center_window(app, 600, 450)
 
     def schedule_navigation(callback, *args, **kwargs):
         nonlocal next_action
@@ -136,7 +147,7 @@ def create_ip_verification_ui(on_back=None):
         app.quit()
 
     container = ctk.CTkFrame(app, fg_color="transparent")
-    container.pack(fill="both", expand=True, padx=28, pady=20)
+    container.pack(fill="x", padx=28, pady=20) 
 
     ctk.CTkLabel(
         container,
@@ -159,7 +170,7 @@ def create_ip_verification_ui(on_back=None):
         border_color=COLORS["border"],
         corner_radius=14,
     )
-    card.pack(fill="both", expand=True)
+    card.pack(fill="x")
 
     inputs_section = ctk.CTkFrame(card, fg_color="transparent")
     inputs_section.pack(fill="x", padx=20, pady=(18, 10))
@@ -173,33 +184,46 @@ def create_ip_verification_ui(on_back=None):
         border_color=COLORS["border"],
         corner_radius=12,
     )
-    results.pack(fill="both", expand=True, padx=20, pady=(0, 14))
+    results.pack(fill="x", padx=20, pady=(0, 20)) 
 
     fields = [
         "Classe du réseau",
+        "Type d'adresse"
     ]
 
     for label_text in fields:
         row = ctk.CTkFrame(results, fg_color="transparent")
         row.pack(fill="x", padx=16, pady=5)
-        ctk.CTkLabel(row, text=label_text + " :", width=180, anchor="e", font=("Segoe UI", 13), text_color=COLORS["text"]).pack(side="left")
-        ctk.CTkLabel(row, text="-", anchor="w", font=("Segoe UI", 13, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=10)
+        
+        ctk.CTkLabel(row, text=label_text + " :", width=180, anchor="e", 
+                     font=("Segoe UI", 13), text_color=COLORS["text"]).pack(side="left")
+        
+        # On crée le label de valeur
+        val_label = ctk.CTkLabel(row, text="-", anchor="w", 
+                                 font=("Segoe UI", 13, "bold"), text_color=COLORS["muted"])
+        val_label.pack(side="left", padx=10)
+        
+        # CRUCIAL : On enregistre le widget dans le dictionnaire pour le modifier plus tard
+        result_labels[label_text] = val_label
 
     def on_verify():
     # On utilise directement notre liste all_entries
         octets = lire_octets(group_entries)
         classeAdresse = "N/A"
+        typeAdresse = "N/A"
         
         if octets:
             classe = definirClasse(octets[0])
-            
+            typeAdresse = definirTypeIP(octets)
+
             # Mise à jour des labels via le dictionnaire
-            result_labels["Classe du reseau"].configure(text=classe, text_color=COLORS["primary"])
-        
+            result_labels["Classe du réseau"].configure(text=classe, text_color=COLORS["primary"])
+            result_labels["Type d'adresse"].configure(text=typeAdresse, text_color=COLORS["primary"])
             # ... continue pour les autres champs
         else:
             # Optionnel : Message d'erreur si IP invalide
-            result_labels["Classe du reseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
+            result_labels["Classe du réseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
+            result_labels["Type d'adresse"].configure(text="IP Invalide", text_color=COLORS["danger"])
 
         
 
@@ -214,6 +238,8 @@ def create_ip_verification_ui(on_back=None):
                     clear_recursive(widget)
         clear_recursive(inputs_section)
         # Reset les labels de résultats ici si besoin
+        for label in result_labels.values():
+            label.configure(text="-", text_color=COLORS["muted"])
 
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(14, 0))
@@ -257,4 +283,4 @@ def create_ip_verification_ui(on_back=None):
         next_action()
 
 if __name__ == "__main__":
-    create_ip_verification_ui()
+    create_definer_class_ui()

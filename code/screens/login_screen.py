@@ -45,6 +45,9 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
 
 
 def cleanup_window(window: ctk.CTk) -> None:
+    # CustomTkinter laisse des callbacks after() en vie (animations, DPI checks).
+    # Si on détruit la fenêtre sans les annuler, Tk fire sur des widgets morts
+    # → TclError "invalid command name". On draine d'abord, puis destroy.
     try:
         if window.winfo_exists():
             window.withdraw()
@@ -78,7 +81,8 @@ def cleanup_window(window: ctk.CTk) -> None:
 
 def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
     app = ctk.CTk()
-    # On doit mettre le .after pour que l'icone soit appliquee avant le mainloop.
+    # iconbitmap() avant que la fenêtre soit mappée lève TclError sur Windows.
+    # Le after(100) laisse le temps au wm de créer la fenêtre.
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
@@ -87,6 +91,8 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
     app.resizable(False, False)
     center_window(app, 560, 430)
 
+    # Pattern de navigation différée : on stocke le callback, on quitte mainloop,
+    # cleanup_window() s'exécute, puis on appelle le callback dans un contexte propre.
     def schedule_navigation(callback, *args, **kwargs):
         nonlocal next_action
         if callable(callback):
@@ -159,23 +165,17 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
             messagebox.showwarning("Attention", "Un des champs est vide.")
             return
 
-        is_valid, error_message = validate_password_policy(
-            valeurPassword,
-            min_lowercase=1,
-            min_uppercase=2,
-            min_digits=1,
-            min_special=1,
-        )
-        if not is_valid:
-            messagebox.showwarning("Mot de passe invalide", error_message)
-            return
-
+        # NOTE : validate_password_policy NE DOIT PAS être appelé ici.
+        # La validation de la policy appartient à la création/changement de mot de passe.
+        # À la connexion, on passe les credentials à l'auth_service sans filtrer :
+        # si la policy change, les anciens users seraient bloqués côté UI avant même
+        # que le backend puisse vérifier leur mot de passe.
+        # L'is_admin ci-dessous est ignoré par main.py (remplacé par db_is_admin depuis la DB).
+        is_admin = "admin" in valeurUserName.lower()
+        if callable(on_login_success):
+            schedule_navigation(on_login_success, username=valeurUserName, password=valeurPassword, is_admin=is_admin)
         else:
-            is_admin = "admin" in valeurUserName.lower()
-            if callable(on_login_success):
-                schedule_navigation(on_login_success, username=valeurUserName, password=valeurPassword, is_admin=is_admin)
-            else:
-                messagebox.showinfo("UserName", f"Nom d'utilisateur : {valeurUserName}\nMot de passe : {valeurPassword}")
+            messagebox.showinfo("UserName", f"Nom d'utilisateur : {valeurUserName}\nMot de passe : {valeurPassword}")
 
     ctk.CTkButton(
         actions,

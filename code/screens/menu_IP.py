@@ -64,18 +64,18 @@ def cleanup_window(window: ctk.CTk) -> None:
 
 
 def create_menu_ui(
-    on_open_menu_IP=None,
-    on_open_ip_association=None,
-    on_open_inscription=None,
-    on_open_cidr_table=None,
-    on_logout=None,
+    on_open_subnet_verification=None,
+    on_open_definer_classe=None,
+    on_open_get_mask=None,
+    on_open_get_network=None,
+    on_back=None,
     is_admin=False,
 ):
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
-    app.title("Menu principal")
+    app.title("Gestion adresse IP")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(False, False)
     center_window(app, 720, 520)
@@ -116,9 +116,10 @@ def create_menu_ui(
     card.pack(fill="both", expand=True)
 
     modules = [
-        "Gestion IP",
-        "IP Association",
-        "CIDR Table",
+        "IP Vérification",
+        "Recherche classe IP",
+        "Recherche masque IP",
+        "Définir réseau et sous réseau",
     ]
     # "Inscription" visible seulement pour les admins — inséré en tête pour mise en évidence.
     if is_admin:
@@ -159,10 +160,10 @@ def create_menu_ui(
         selected = modules_var.get()
         # Table de dispatch : évite une chaîne if/elif fragile à l'ajout de modules.
         routes = {
-            "Gestion IP": on_open_menu_IP,
-            "IP Association": on_open_ip_association,
-            "Inscription": on_open_inscription,
-            "CIDR Table": on_open_cidr_table,
+            "IP Vérification": on_open_subnet_verification,
+            "Recherche classe IP": on_open_definer_classe,
+            "Recherche masque IP": on_open_get_mask,
+            "Définir réseau et sous réseau": on_open_get_network,
         }
         callback = routes.get(selected)
         if callable(callback):
@@ -183,12 +184,12 @@ def create_menu_ui(
 
     ctk.CTkButton(
         actions,
-        text="Déconnexion",
+        text="Retour au menu",
         height=42,
         fg_color=COLORS["danger"],
         hover_color=COLORS["danger_hover"],
         font=("Segoe UI", 14, "bold"),
-        command=(lambda: schedule_navigation(on_logout) if callable(on_logout) else app.quit()),
+        command=(lambda: schedule_navigation(on_back) if callable(on_back) else app.quit()),
     ).pack(side="left", fill="x", padx=(8, 0))
 
     app.mainloop()

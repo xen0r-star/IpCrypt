@@ -39,12 +39,9 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
 
 
 def cleanup_window(window: ctk.CTk) -> None:
-    """Stop pending Tk callbacks before destroying the window.
-
-    CustomTkinter schedules internal after() jobs (animations / DPI checks).
-    Cancelling them avoids 'invalid command name ... (after script)' errors
-    during fast window transitions.
-    """
+    # CustomTkinter laisse des callbacks after() en vie (animations, DPI checks).
+    # Si on détruit la fenêtre sans les annuler, Tk fire sur des widgets morts
+    # → TclError "invalid command name". On draine d'abord, puis destroy.
     try:
         if window.winfo_exists():
             window.withdraw()
@@ -76,13 +73,6 @@ def cleanup_window(window: ctk.CTk) -> None:
         pass
 
 
-def submit_inscription(entryUserNameInscription, entryPasswordInscription, profile_var):
-    username= entryUserNameInscription.get().strip()
-    password= entryPasswordInscription.get().strip()
-    profile = profile_var.get().strip()
-
-    print(f"Username: {username}, Password: {password}, Profile: {profile}")
-
 def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text="Connexion"):
     app = ctk.CTk()
     if ICO.exists():
@@ -93,6 +83,8 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
     app.resizable(False, False)
     center_window(app, 600, 520)
 
+    # Pattern de navigation différée : on stocke le callback, on quitte mainloop,
+    # cleanup_window() s'exécute, puis on appelle le callback dans un contexte propre.
     def schedule_navigation(callback, *args, **kwargs):
         nonlocal next_action
         if callable(callback):
@@ -138,7 +130,6 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
     )
     entryUserNameInscription.pack(fill="x", pady=(6, 12))
 
-    # Insérer une commande pour récupérer si admin ou client.
     ctk.CTkLabel(form, text="Profil", font=("Segoe UI", 13, "bold"), text_color=COLORS["text"]).pack(anchor="w")
     profile_var = StringVar(value="Client")
     ctk.CTkOptionMenu(
@@ -175,7 +166,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
         variable=show_password_var,
         command=toggle_password_visibility,
     ).pack(anchor="w")
-    
+
 
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(16, 0))
@@ -189,6 +180,8 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
             messagebox.showwarning("Attention", "Un des champs est vide.")
             return
 
+        # Validation de policy uniquement à la création de compte,
+        # jamais à la connexion.
         is_valid, error_message = validate_password_policy(
             password,
             min_lowercase=1,
@@ -200,7 +193,6 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
             messagebox.showwarning("Mot de passe invalide", error_message)
             return
 
-        submit_inscription(entryUserNameInscription, entryPasswordInscription, profile_var)
         if callable(on_signup_success):
             schedule_navigation(on_signup_success, username=username, password=password, profile=profile)
 
@@ -211,7 +203,6 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
         fg_color=COLORS["primary"],
         hover_color=COLORS["primary_hover"],
         font=("Segoe UI", 14, "bold"),
-        # Insertion de lambda, sinon Python exécute directement la fonction au lieu de l'associer au bouton.
         command=on_submit_signup,
         ).pack(side="left", expand=True, fill="x", padx=(0, 8))
 
