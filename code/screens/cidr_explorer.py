@@ -138,7 +138,7 @@ def create_cidr_table_ui(on_back=None):
     next_action = None
     app.title("Tableau CIDR")
     app.configure(fg_color=COLORS["bg"])
-    app.resizable(False, False) #a modifier pour que chaque page aie la meme taille
+    app.resizable(True, True) #a modifier pour que chaque page aie la meme taille
     center_window(app, 980, 700)
 
     def schedule_navigation(callback, *args, **kwargs):
