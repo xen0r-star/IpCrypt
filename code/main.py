@@ -85,19 +85,6 @@ def launch(splash: tk.Tk) -> None:
         else:
             messagebox.showerror("Erreur d'authentification", "Nom d'utilisateur ou mot de passe incorrect")
 
-    def on_signup_success(username=None, password=None, profile=None):
-        """Callback pour l'inscription: hache et enregistre le mot de passe"""
-        if not username or not password or not profile:
-            messagebox.showerror("Erreur", "Données d'inscription incomplètes")
-            return
-        
-        if hashage_motDePasse(password, "inscription_ui", username, profile):
-            messagebox.showinfo("Succès", "Compte créé avec succès!")
-            is_admin = (profile == "Admin")
-            open_menu(is_admin=is_admin, username=username)
-        else:
-            messagebox.showerror("Erreur", "Erreur lors de la création du compte")
-
     def on_first_connexion_success(username=None, new_password=None, is_admin=False):
         if not username or not new_password:
             messagebox.showerror("Erreur", "Donnees de changement de mot de passe incompletes")
@@ -120,7 +107,18 @@ def launch(splash: tk.Tk) -> None:
     def open_inscription(from_menu: bool = False):
         back_callback = open_menu if from_menu else open_connexion
         back_text     = "Retour menu" if from_menu else "Connexion"
-        create_inscription_ui(on_signup_success=on_signup_success, on_back=back_callback, back_button_text=back_text)
+
+        def after_signup(username=None, password=None, profile=None):
+            if not username or not password or not profile:
+                messagebox.showerror("Erreur", "Données d'inscription incomplètes")
+                return
+            if hashage_motDePasse(password, "inscription_ui", username, profile):
+                messagebox.showinfo("Succès", "Compte créé avec succès!")
+                back_callback()
+            else:
+                messagebox.showerror("Erreur", "Erreur lors de la création du compte")
+
+        create_inscription_ui(on_signup_success=after_signup, on_back=back_callback, back_button_text=back_text)
 
     def open_first_connexion(username: str, is_admin: bool):
         create_first_connection_ui(
@@ -139,7 +137,7 @@ def launch(splash: tk.Tk) -> None:
         if is_admin is not None:
             current_is_admin = is_admin
         create_menu_ui(
-            on_open_ip_menu=open_ip_menu,
+            on_open_menu_IP=open_ip_menu,
             on_open_ip_association=open_ip_association,
             on_open_inscription=lambda: open_inscription(from_menu=True),
             on_open_cidr_table=open_cidr_table,
