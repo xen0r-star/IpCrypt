@@ -80,7 +80,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
     next_action = None
     app.title("Inscription")
     app.configure(fg_color=COLORS["bg"])
-    app.resizable(False, False)
+    app.resizable(True, True) 
     center_window(app, 600, 520)
 
     # Pattern de navigation différée : on stocke le callback, on quitte mainloop,
