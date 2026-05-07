@@ -149,11 +149,27 @@ def launch(splash: tk.Tk) -> None:
             is_admin=current_is_admin,
         )
 
-    def open_ip_menu(): create_menu_ip_ui(on_back=open_menu)
+    def open_ip_menu(): 
+        create_menu_ip_ui(
+            on_open_subnet_verification=open_subnet_verification,
+            on_open_definer_classe=open_definer_classe,
+            on_open_get_mask=open_get_mask,
+            on_open_get_network=open_get_network,
+            on_back=open_menu
+    )
     def open_ip_association():  create_ip_association_ui(on_back=open_menu)
     def open_cidr_table():      create_cidr_table_ui(on_back=open_menu)
+    def open_subnet_verification():
+        create_ip_verification_ui(on_back=open_ip_menu)
 
-    open_connexion()
+    def open_definer_classe():
+        create_definer_class_ui(on_back=open_ip_menu)
+
+    def open_get_mask():
+        create_get_mask_ui(on_back=open_ip_menu)
+
+    def open_get_network():
+        create_get_network_ui(on_back=open_ip_menu)
 
 if __name__ == "__main__":
     splash = show_splash()
