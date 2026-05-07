@@ -16,6 +16,10 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# ══════════════════════════════════════════════
+# Interface CustomTkinter
+# ══════════════════════════════════════════════
+
 COLORS = {
     "bg": "#eef1f6",
     "surface": "#ffffff",
@@ -37,6 +41,7 @@ SPACING = {
 
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
+    """Centre la fenêtre sur l'écran."""
     screen_w = window.winfo_screenwidth()
     screen_h = window.winfo_screenheight()
     pos_x = int((screen_w - width) / 2)
@@ -45,9 +50,7 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
 
 
 def cleanup_window(window: ctk.CTk) -> None:
-    # CustomTkinter laisse des callbacks after() en vie (animations, DPI checks).
-    # Si on détruit la fenêtre sans les annuler, Tk fire sur des widgets morts
-    # → TclError "invalid command name". On draine d'abord, puis destroy.
+    """Détruit la fenêtre proprement en annulant les callbacks after() pour éviter les TclError sur widgets morts."""
     try:
         if window.winfo_exists():
             window.withdraw()
@@ -75,14 +78,13 @@ def cleanup_window(window: ctk.CTk) -> None:
         if window.winfo_exists():
             window.destroy()
     except Exception:
-        # Python 3.14 + CustomTkinter can raise TclError during command cleanup.
         pass
 
 
 def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
+    """Fenêtre de connexion : saisie du nom d'utilisateur et du mot de passe."""
     app = ctk.CTk()
     # iconbitmap() avant que la fenêtre soit mappée lève TclError sur Windows.
-    # Le after(100) laisse le temps au wm de créer la fenêtre.
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
@@ -91,9 +93,8 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
     app.resizable(False, False)
     center_window(app, 560, 430)
 
-    # Pattern de navigation différée : on stocke le callback, on quitte mainloop,
-    # cleanup_window() s'exécute, puis on appelle le callback dans un contexte propre.
     def schedule_navigation(callback, *args, **kwargs):
+        """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
         nonlocal next_action
         if callable(callback):
             next_action = lambda: callback(*args, **kwargs)
@@ -150,6 +151,7 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
     entryPassword.pack(fill="x", pady=(6, 10))
 
     def toggle_password():
+        """Bascule l'affichage du mot de passe en clair ou masqué."""
         entryPassword.configure(show="" if entryPassword.cget("show") == "*" else "*")
 
     ctk.CTkCheckBox(form, text="Afficher le mot de passe", text_color=COLORS["muted"], command=toggle_password).pack(anchor="w")
@@ -158,6 +160,7 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
     actions.pack(fill="x")
 
     def on_submit():
+        """Valide les champs et déclenche la vérification des identifiants."""
         valeurUserName = entryUserName.get().strip()
         valeurPassword = entryPassword.get().strip()
 
@@ -165,12 +168,8 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
             messagebox.showwarning("Attention", "Un des champs est vide.")
             return
 
-        # NOTE : validate_password_policy NE DOIT PAS être appelé ici.
-        # La validation de la policy appartient à la création/changement de mot de passe.
-        # À la connexion, on passe les credentials à l'auth_service sans filtrer :
-        # si la policy change, les anciens users seraient bloqués côté UI avant même
-        # que le backend puisse vérifier leur mot de passe.
-        # L'is_admin ci-dessous est ignoré par main.py (remplacé par db_is_admin depuis la DB).
+        # La validation de policy appartient à la création/changement de mot de passe,
+        # pas à la connexion : si la policy change, les anciens comptes ne seraient plus accessibles.
         is_admin = "admin" in valeurUserName.lower()
         if callable(on_login_success):
             schedule_navigation(on_login_success, username=valeurUserName, password=valeurPassword, is_admin=is_admin)
@@ -215,6 +214,7 @@ def create_connexion_ui(on_login_success=None, on_go_to_signup=None):
     cleanup_window(app)
     if callable(next_action):
         next_action()
+
 
 if __name__ == "__main__":
     create_connexion_ui()

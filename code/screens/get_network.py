@@ -3,8 +3,13 @@ import customtkinter as ctk
 from pathlib import Path
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
+# ══════════════════════════════════════════════
+# Logique métier
+# ══════════════════════════════════════════════
+
 def definirClasse(premOctet):
-    octet=int(premOctet)
+    """Retourne la classe (A–E) d'une adresse IP à partir de son premier octet."""
+    octet = int(premOctet)
     match octet:
         case _ if 1 <= octet <= 126:
             return "A"
@@ -17,7 +22,9 @@ def definirClasse(premOctet):
         case _:
             return "E"
 
-def defAdresseReseau(segment,classe):
+
+def defAdresseReseau(segment, classe):
+    """Retourne l'adresse réseau classful en mettant à zéro les octets hôte selon la classe."""
     match classe:
         case "A":
             return f"{segment[0]}.0.0.0"
@@ -27,19 +34,21 @@ def defAdresseReseau(segment,classe):
             return f"{segment[0]}.{segment[1]}.{segment[2]}.0"
         case _:
             return "N/A"
-        
+
+
 def defAdresseSousReseau(segment, masque):
-    # On convertit les chaînes en entiers, on fait le ET binaire, puis on repasse en string
+    """Calcule l'adresse de sous-réseau par ET logique bit à bit entre l'IP et le masque."""
     res = []
     for i in range(4):
         octet_ip = int(segment[i])
         octet_masque = int(masque[i])
-        # Calcul du ET logique
-        resultat_octet = octet_ip & octet_masque
-        res.append(str(resultat_octet))
-    
-    # On joint le tout avec des points
+        res.append(str(octet_ip & octet_masque))
     return ".".join(res)
+
+
+# ══════════════════════════════════════════════
+# Interface CustomTkinter
+# ══════════════════════════════════════════════
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -59,6 +68,7 @@ COLORS = {
 
 
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
+    """Centre la fenêtre sur l'écran."""
     screen_w = window.winfo_screenwidth()
     screen_h = window.winfo_screenheight()
     pos_x = int((screen_w - width) / 2)
@@ -67,6 +77,7 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
 
 
 def cleanup_window(window: ctk.CTk) -> None:
+    """Détruit la fenêtre proprement en annulant les callbacks after() pour éviter les TclError sur widgets morts."""
     try:
         if window.winfo_exists():
             window.withdraw()
@@ -94,12 +105,16 @@ def cleanup_window(window: ctk.CTk) -> None:
         if window.winfo_exists():
             window.destroy()
     except Exception:
-        # Python 3.14 + CustomTkinter can raise TclError during command cleanup.
         pass
 
+
+# Listes globales réinitialisées à chaque ouverture de fenêtre.
 group_entries = []
+result_labels = {}
+
 
 def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
+    """Crée une ligne de 4 champs de saisie pour une adresse IPv4 (validation : chiffres uniquement, max 3 par octet)."""
     row = ctk.CTkFrame(parent, fg_color="transparent")
     row.pack(fill="x", pady=(0, 10))
 
@@ -118,7 +133,7 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
     inner.pack(padx=12, pady=10)
 
     vcmd = (parent.winfo_toplevel().register(lambda val: val.isdigit() and len(val) <= 3 or val == ""), "%P")
-    
+
     for i in range(4):
         entry = ctk.CTkEntry(inner, width=55, height=36, justify="center", fg_color=COLORS["surface"], border_color=COLORS["border"], validate="key", validatecommand=vcmd)
         entry.pack(side="left")
@@ -126,10 +141,9 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 18, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
 
-result_labels = {}
 
 def lire_octets(group: list) -> list | None:
-    """Extrait et valide les 4 octets d'un groupe de champs Entry."""
+    """Extrait les 4 octets d'un groupe de champs Entry. Retourne None si un octet est vide ou hors de 0–255."""
     octets = []
     for entry in group:
         val = entry.get().strip()
@@ -137,30 +151,34 @@ def lire_octets(group: list) -> list | None:
             return None
         octets.append(str(int(val)).zfill(3))
     return octets
-    
+
+
 def create_get_network_ui(on_back=None):
+    """Fenêtre Définir réseau et sous-réseau : calcule l'adresse réseau classful et l'adresse de sous-réseau par masque personnalisé."""
     group_entries.clear()
+    result_labels.clear()
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
-    app.title("IP Verification")
+    app.title("Définir réseau et sous-réseau")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
     center_window(app, 720, 520)
 
     def schedule_navigation(callback, *args, **kwargs):
+        """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
         nonlocal next_action
         if callable(callback):
             next_action = lambda: callback(*args, **kwargs)
         app.quit()
 
     container = ctk.CTkFrame(app, fg_color="transparent")
-    container.pack(fill="x", padx=28, pady=20) 
+    container.pack(fill="x", padx=28, pady=20)
 
     ctk.CTkLabel(
         container,
-        text="IP Verification",
+        text="Définir réseau et sous-réseau",
         font=("Segoe UI", 34, "bold"),
         text_color=COLORS["text"],
     ).pack(anchor="center")
@@ -194,65 +212,50 @@ def create_get_network_ui(on_back=None):
         border_color=COLORS["border"],
         corner_radius=12,
     )
-    results.pack(fill="x", padx=20, pady=(0, 20)) 
+    results.pack(fill="x", padx=20, pady=(0, 20))
 
-    fields = [
-        "Adresse réseau",
-        "Adresse sous-réseau"
-    ]
-
-    for label_text in fields:
+    for label_text in ["Adresse réseau", "Adresse sous-réseau"]:
         row = ctk.CTkFrame(results, fg_color="transparent")
         row.pack(fill="x", padx=16, pady=5)
-        
-        ctk.CTkLabel(row, text=label_text + " :", width=180, anchor="e", 
+        ctk.CTkLabel(row, text=label_text + " :", width=180, anchor="e",
                      font=("Segoe UI", 13), text_color=COLORS["text"]).pack(side="left")
-        
-        # On crée le label de valeur
-        val_label = ctk.CTkLabel(row, text="-", anchor="w", 
+        val_label = ctk.CTkLabel(row, text="-", anchor="w",
                                  font=("Segoe UI", 13, "bold"), text_color=COLORS["muted"])
         val_label.pack(side="left", padx=10)
-        
-        # CRUCIAL : On enregistre le widget dans le dictionnaire pour le modifier plus tard
         result_labels[label_text] = val_label
 
     def on_verify():
+        """Lit IP et masque, calcule l'adresse réseau classful et l'adresse de sous-réseau."""
+        # group_entries[:4] = IP, group_entries[4:] = Masque
         octetsIP     = lire_octets(group_entries[:4])
         octetsMasque = lire_octets(group_entries[4:])
-        
+
         if octetsIP and octetsMasque:
             classe = definirClasse(octetsIP[0])
             adresseReseau = defAdresseReseau(octetsIP, classe)
             adresseSousReseau = defAdresseSousReseau(octetsIP, octetsMasque)
-            # Mise à jour des labels via le dictionnaire
             result_labels["Adresse réseau"].configure(text=adresseReseau, text_color=COLORS["primary"])
             result_labels["Adresse sous-réseau"].configure(text=adresseSousReseau, text_color=COLORS["primary"])
-
         else:
-            # Optionnel : Message d'erreur si IP invalide
             result_labels["Adresse réseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
             result_labels["Adresse sous-réseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
 
-        
-
     def on_clear():
+        """Efface les champs de saisie et réinitialise les labels de résultats."""
         def clear_recursive(container):
             for widget in container.winfo_children():
-                # Si c'est un champ de saisie, on l'efface
                 if isinstance(widget, ctk.CTkEntry):
                     widget.delete(0, "end")
-                # Si c'est un cadre, on regarde à l'intérieur
                 elif isinstance(widget, (ctk.CTkFrame, ctk.CTkScrollableFrame)):
                     clear_recursive(widget)
         clear_recursive(inputs_section)
-        # Reset les labels de résultats ici si besoin
         for label in result_labels.values():
             label.configure(text="-", text_color=COLORS["muted"])
 
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(14, 0))
 
-    ctk.CTkButton( 
+    ctk.CTkButton(
         actions,
         text="Vérifier",
         height=42,
@@ -289,6 +292,7 @@ def create_get_network_ui(on_back=None):
     cleanup_window(app)
     if callable(next_action):
         next_action()
+
 
 if __name__ == "__main__":
     create_get_network_ui()

@@ -17,6 +17,10 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# ══════════════════════════════════════════════
+# Interface CustomTkinter
+# ══════════════════════════════════════════════
+
 COLORS = {
     "bg": "#eef1f6",
     "surface": "#ffffff",
@@ -30,7 +34,9 @@ COLORS = {
     "field_bg": "#f6f8fc",
 }
 
+
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
+    """Centre la fenêtre sur l'écran."""
     screen_w = window.winfo_screenwidth()
     screen_h = window.winfo_screenheight()
     pos_x = int((screen_w - width) / 2)
@@ -39,9 +45,7 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
 
 
 def cleanup_window(window: ctk.CTk) -> None:
-    # CustomTkinter laisse des callbacks after() en vie (animations, DPI checks).
-    # Si on détruit la fenêtre sans les annuler, Tk fire sur des widgets morts
-    # → TclError "invalid command name". On draine d'abord, puis destroy.
+    """Détruit la fenêtre proprement en annulant les callbacks after() pour éviter les TclError sur widgets morts."""
     try:
         if window.winfo_exists():
             window.withdraw()
@@ -69,23 +73,22 @@ def cleanup_window(window: ctk.CTk) -> None:
         if window.winfo_exists():
             window.destroy()
     except Exception:
-        # Python 3.14 + CustomTkinter can raise TclError during command cleanup.
         pass
 
 
 def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text="Connexion"):
+    """Fenêtre d'inscription (admin uniquement) : saisie du nom, du profil et du mot de passe du nouvel utilisateur."""
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
     app.title("Inscription")
     app.configure(fg_color=COLORS["bg"])
-    app.resizable(True, True) 
+    app.resizable(True, True)
     center_window(app, 600, 520)
 
-    # Pattern de navigation différée : on stocke le callback, on quitte mainloop,
-    # cleanup_window() s'exécute, puis on appelle le callback dans un contexte propre.
     def schedule_navigation(callback, *args, **kwargs):
+        """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
         nonlocal next_action
         if callable(callback):
             next_action = lambda: callback(*args, **kwargs)
@@ -157,6 +160,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
     show_password_var = BooleanVar(value=False)
 
     def toggle_password_visibility():
+        """Bascule l'affichage du mot de passe en clair ou masqué."""
         entryPasswordInscription.configure(show="" if show_password_var.get() else "*")
 
     ctk.CTkCheckBox(
@@ -167,11 +171,11 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
         command=toggle_password_visibility,
     ).pack(anchor="w")
 
-
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(16, 0))
 
     def on_submit_signup():
+        """Valide la politique de mot de passe puis transmet les données au callback d'inscription."""
         username = entryUserNameInscription.get().strip()
         password = entryPasswordInscription.get().strip()
         profile = profile_var.get().strip()
@@ -180,8 +184,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
             messagebox.showwarning("Attention", "Un des champs est vide.")
             return
 
-        # Validation de policy uniquement à la création de compte,
-        # jamais à la connexion.
+        # La validation de policy est appliquée uniquement à la création de compte, jamais à la connexion.
         is_valid, error_message = validate_password_policy(
             password,
             min_lowercase=1,
@@ -204,7 +207,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
         hover_color=COLORS["primary_hover"],
         font=("Segoe UI", 14, "bold"),
         command=on_submit_signup,
-        ).pack(side="left", expand=True, fill="x", padx=(0, 8))
+    ).pack(side="left", expand=True, fill="x", padx=(0, 8))
 
     ctk.CTkButton(
         actions,

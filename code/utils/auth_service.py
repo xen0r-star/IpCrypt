@@ -7,7 +7,11 @@ from psycopg.rows import dict_row
 
 load_dotenv()
 
-#parametre argon2 - hésite a les mettres dans .venv (variable d'environnement pour plus sécutité)
+# ══════════════════════════════════════════════
+# Logique métier
+# ══════════════════════════════════════════════
+
+# time_cost=16 et memory_cost=64 Mo rendent les attaques GPU non-viables.
 pwdHasher = PasswordHasher(
     time_cost=16,
     memory_cost=65536,
@@ -18,7 +22,9 @@ pwdHasher = PasswordHasher(
     type=Type.ID
 )
 
+
 def get_connection():
+    """Ouvre une connexion SSL authentifiée à la base PostgreSQL via les variables d'environnement."""
     host = os.getenv("DB_HOST")
     password = os.getenv("DB_PASSWORD")
     if not host or not password:
@@ -34,8 +40,9 @@ def get_connection():
         row_factory=dict_row,
     )
 
-#il faut une fonction qui va aller vérif dans le db grace au nom d'utilisateur si les mdp correspondent ou pas
+
 def recuperation_motDePasse_database(username):
+    """Retourne la ligne utilisateur (username, password, is_admin, is_firstconnexion) ou None si inexistant."""
     with get_connection() as connection:
         with connection.cursor() as cursor:
             sql = "SELECT username, password, is_admin, is_firstconnexion FROM users WHERE username=%s"
@@ -44,9 +51,12 @@ def recuperation_motDePasse_database(username):
 
 
 def recuperation_utilisateur_database(username):
+    """Alias de recuperation_motDePasse_database."""
     return recuperation_motDePasse_database(username)
 
-def inscription_dans_database(username:str, profilUser:str, passwordHashed:str) -> bool:
+
+def inscription_dans_database(username: str, profilUser: str, passwordHashed: str) -> bool:
+    """Insère un nouvel utilisateur en base. Lève UniqueViolation si le nom d'utilisateur est déjà pris."""
     with get_connection() as connection:
         with connection.cursor() as cursor:
             sql = "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s)"
@@ -57,6 +67,7 @@ def inscription_dans_database(username:str, profilUser:str, passwordHashed:str) 
 
 
 def update_motDePasse_premiere_connexion_database(username: str, passwordHashed: str) -> bool:
+    """Met à jour le mot de passe et bascule is_firstconnexion à FALSE. Retourne False si l'utilisateur est introuvable."""
     with get_connection() as connection:
         with connection.cursor() as cursor:
             sql = "UPDATE users SET password=%s, is_firstconnexion=FALSE WHERE username=%s"
@@ -65,10 +76,11 @@ def update_motDePasse_premiere_connexion_database(username: str, passwordHashed:
         connection.commit()
     return updated_rows == 1
 
-#verification du mot de passe 
+
 def verification_motDePasse(passwordToVerify: str, passwordHashed: str) -> bool:
+    """Vérifie un mot de passe en clair contre un hash Argon2 stocké en base."""
     try:
-        # Argon2 verify signature: verify(stored_hash, plain_password)
+        # verify(stored_hash, plain_password) — ordre contre-intuitif imposé par argon2-cffi.
         pwdHasher.verify(passwordHashed, passwordToVerify)
         return True
     except exceptions.VerifyMismatchError:
@@ -78,17 +90,23 @@ def verification_motDePasse(passwordToVerify: str, passwordHashed: str) -> bool:
     except Exception:
         return False
 
-#hashage du mot de passe et en fonction de la source on vérifie ou on enregistre
+
 def hashage_motDePasse(motDePasseEnClaire: str, source: str, username: str, profilUser: str = None) -> bool:
+    """
+    Point d'entrée unique pour toutes les opérations sur les mots de passe.
+      - connexion_ui       : vérifie le mot de passe contre le hash stocké.
+      - inscription_ui     : hache le mot de passe et insère le nouvel utilisateur.
+      - first_connexion_ui : hache le mot de passe et met à jour le compte existant.
+    Toute exception est avalée et retourne False pour ne pas exposer les détails d'erreur.
+    """
     try:
         if source == "connexion_ui":
-            # Connexion: ne pas re-hasher; verifier le password en clair contre le hash stocke.
             motDePasseAVerifier = recuperation_motDePasse_database(username)
             if motDePasseAVerifier is None:
                 return False
             passwordHash = motDePasseAVerifier.get('password', '')
             return verification_motDePasse(motDePasseEnClaire, passwordHash)
-        
+
         elif source == "inscription_ui":
             motDePasseHashe = pwdHasher.hash(motDePasseEnClaire)
             return inscription_dans_database(username, profilUser, motDePasseHashe)
@@ -96,7 +114,7 @@ def hashage_motDePasse(motDePasseEnClaire: str, source: str, username: str, prof
         elif source == "first_connexion_ui":
             motDePasseHashe = pwdHasher.hash(motDePasseEnClaire)
             return update_motDePasse_premiere_connexion_database(username, motDePasseHashe)
-        
+
         else:
             return False
     except Exception:

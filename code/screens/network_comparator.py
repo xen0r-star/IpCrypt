@@ -6,6 +6,41 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# ══════════════════════════════════════════════
+# Logique métier
+# ══════════════════════════════════════════════
+
+def calcule_adresse_reseau(ip1, masque1, ip2, masque2) -> tuple[list, list, str, bool]:
+    """
+    Calcule les adresses réseau par ET bit à bit et détermine la visibilité bilatérale.
+    Retourne (reseau1, reseau2, verdict, meme_reseau).
+    """
+    reseau1 = [int(ip1[i]) & int(masque1[i]) for i in range(4)]
+    reseau2 = [int(ip2[i]) & int(masque2[i]) for i in range(4)]
+
+    # Calcul croisé : est-ce que chaque hôte voit l'autre dans son propre réseau ?
+    ip2_vu_par_masque1 = [int(ip2[i]) & int(masque1[i]) for i in range(4)]
+    ip1_vu_par_masque2 = [int(ip1[i]) & int(masque2[i]) for i in range(4)]
+
+    a_voit_b = ip2_vu_par_masque1 == reseau1
+    b_voit_a = ip1_vu_par_masque2 == reseau2
+
+    if a_voit_b and b_voit_a:
+        verdict = "A et B sont dans le même réseau."
+    elif a_voit_b:
+        verdict = "A voit B mais B ne voit pas A."
+    elif b_voit_a:
+        verdict = "B voit A mais A ne voit pas B."
+    else:
+        verdict = "A et B ne se voient pas."
+
+    return reseau1, reseau2, verdict, (a_voit_b and b_voit_a)
+
+
+# ══════════════════════════════════════════════
+# Interface CustomTkinter
+# ══════════════════════════════════════════════
+
 COLORS = {
     "bg": "#eef1f6",
     "surface": "#ffffff",
@@ -21,7 +56,9 @@ COLORS = {
     "error": "#b05f5f",
 }
 
+
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
+    """Centre la fenêtre sur l'écran."""
     screen_w = window.winfo_screenwidth()
     screen_h = window.winfo_screenheight()
     pos_x = int((screen_w - width) / 2)
@@ -30,6 +67,7 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
 
 
 def cleanup_window(window: ctk.CTk) -> None:
+    """Détruit la fenêtre proprement en annulant les callbacks after() pour éviter les TclError sur widgets morts."""
     try:
         if window.winfo_exists():
             window.withdraw()
@@ -57,11 +95,11 @@ def cleanup_window(window: ctk.CTk) -> None:
         if window.winfo_exists():
             window.destroy()
     except Exception:
-        # Python 3.14 + CustomTkinter can raise TclError during command cleanup.
         pass
 
+
 def ip_octet_group(parent: ctk.CTkFrame, label_text: str, entries_store: list) -> None:
-    """Crée un groupe de 4 champs de saisie pour une adresse IPv4."""
+    """Crée une ligne de 4 champs de saisie pour une adresse IPv4 et ajoute le groupe dans entries_store."""
     row = ctk.CTkFrame(parent, fg_color="transparent")
     row.pack(fill="x", pady=(0, 12))
 
@@ -73,7 +111,6 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str, entries_store: list) -
     inner = ctk.CTkFrame(octet_box, fg_color="transparent")
     inner.pack(padx=14, pady=12)
 
-    # Validation : max 3 caractères numériques par octet
     vcmd = (parent.winfo_toplevel().register(lambda val: val.isdigit() and len(val) <= 3 or val == ""), "%P")
 
     group_entries = []
@@ -86,8 +123,9 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str, entries_store: list) -
 
     entries_store.append(group_entries)
 
+
 def lire_octets(group: list) -> list | None:
-    """Extrait et valide les 4 octets d'un groupe de champs Entry."""
+    """Extrait les 4 octets d'un groupe de champs Entry. Retourne None si un octet est vide ou hors de 0–255."""
     octets = []
     for entry in group:
         val = entry.get().strip()
@@ -96,30 +134,9 @@ def lire_octets(group: list) -> list | None:
         octets.append(str(int(val)).zfill(3))
     return octets
 
-def calcule_adresse_reseau(ip1, masque1, ip2, masque2) -> tuple[list, list, str, bool]:
-    """Calcule les adresses réseau par AND bit à bit : IP & Masque."""
-    reseau1 = [int(ip1[i]) & int(masque1[i]) for i in range(4)]
-    reseau2 = [int(ip2[i]) & int(masque2[i]) for i in range(4)]
-
-    # Calcul croisé pour déterminer la visibilité asymétrique
-    ip2_vu_par_masque1 = [int(ip2[i]) & int(masque1[i]) for i in range(4)]
-    ip1_vu_par_masque2 = [int(ip1[i]) & int(masque2[i]) for i in range(4)]
-
-    a_voit_b = ip2_vu_par_masque1 == reseau1
-    b_voit_a = ip1_vu_par_masque2 == reseau2
-
-    if a_voit_b and b_voit_a:
-        verdict = "A et B sont dans le même réseau."
-    elif a_voit_b:
-        verdict = "A voit B mais B ne voit pas A."
-    elif b_voit_a:
-        verdict = "B voit A mais A ne voit pas B."
-    else:
-        verdict = "A et B ne se voient pas."
-
-    return reseau1, reseau2, verdict, (a_voit_b and b_voit_a)
 
 def create_ip_association_ui(on_back=None):
+    """Fenêtre IP Association : compare deux adresses IP/masques et détermine leur visibilité réciproque."""
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
@@ -130,6 +147,7 @@ def create_ip_association_ui(on_back=None):
     center_window(app, 960, 680)
 
     def schedule_navigation(callback, *args, **kwargs):
+        """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
         nonlocal next_action
         if callable(callback):
             next_action = lambda: callback(*args, **kwargs)
@@ -159,7 +177,6 @@ def create_ip_association_ui(on_back=None):
     ip_octet_group(section_2, "IP 2", entries_store)
     ip_octet_group(section_2, "Masque 2", entries_store)
 
-    # Zone d'affichage des résultats
     result_frame = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
     result_frame.pack(fill="x", padx=24, pady=(0, 16))
 
@@ -167,7 +184,7 @@ def create_ip_association_ui(on_back=None):
     result_label.pack(anchor="w", padx=16, pady=14)
 
     def on_inputs_changed(_event=None):
-        # Évite d'afficher un ancien résultat après modification des octets.
+        """Avertit l'utilisateur que les valeurs ont changé et que le résultat affiché n'est plus à jour."""
         result_label.configure(
             text="Valeurs modifiées. Clique sur Associer pour recalculer.",
             text_color=COLORS["muted"],
@@ -179,6 +196,7 @@ def create_ip_association_ui(on_back=None):
             entry.bind("<FocusOut>", on_inputs_changed)
 
     def on_associer():
+        """Lit les quatre groupes d'octets, calcule les réseaux et affiche le verdict de visibilité."""
         ip1     = lire_octets(entries_store[0])
         masque1 = lire_octets(entries_store[1])
         ip2     = lire_octets(entries_store[2])
@@ -201,6 +219,7 @@ def create_ip_association_ui(on_back=None):
         )
 
     def on_effacer():
+        """Vide tous les champs de saisie et réinitialise le label de résultat."""
         for group in entries_store:
             for entry in group:
                 entry.delete(0, "end")
@@ -228,6 +247,7 @@ def create_ip_association_ui(on_back=None):
     cleanup_window(app)
     if callable(next_action):
         next_action()
+
 
 if __name__ == "__main__":
     create_ip_association_ui()

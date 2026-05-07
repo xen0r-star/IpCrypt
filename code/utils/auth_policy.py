@@ -1,5 +1,9 @@
 import re
-from utils import auth_service
+
+# ══════════════════════════════════════════════
+# Logique métier
+# ══════════════════════════════════════════════
+
 
 def validate_password_policy(
     password: str,
@@ -11,12 +15,7 @@ def validate_password_policy(
     min_length: int = 12,
     special_pattern: str = r"[^a-zA-Z0-9]",
 ) -> tuple[bool, str]:
-    """Validate a password against a configurable policy.
-
-    Returns:
-        (True, "OK") when the password is valid.
-        (False, "...") with a readable reason when invalid.
-    """
+    """Valide un mot de passe contre une politique configurable. Retourne (True, 'OK') ou (False, raison)."""
     errors: list[str] = []
 
     if min_length > 0 and len(password) < min_length:

@@ -17,6 +17,10 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# ══════════════════════════════════════════════
+# Interface CustomTkinter
+# ══════════════════════════════════════════════
+
 COLORS = {
     "bg": "#eef1f6",
     "surface": "#ffffff",
@@ -30,7 +34,9 @@ COLORS = {
     "field_bg": "#f6f8fc",
 }
 
+
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
+    """Centre la fenêtre sur l'écran."""
     screen_w = window.winfo_screenwidth()
     screen_h = window.winfo_screenheight()
     pos_x = int((screen_w - width) / 2)
@@ -39,9 +45,7 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
 
 
 def cleanup_window(window: ctk.CTk) -> None:
-    # CustomTkinter laisse des callbacks after() en vie (animations, DPI checks).
-    # Si on détruit la fenêtre sans les annuler, Tk fire sur des widgets morts
-    # → TclError "invalid command name". On draine d'abord, puis destroy.
+    """Détruit la fenêtre proprement en annulant les callbacks after() pour éviter les TclError sur widgets morts."""
     try:
         if window.winfo_exists():
             window.withdraw()
@@ -68,11 +72,11 @@ def cleanup_window(window: ctk.CTk) -> None:
         if window.winfo_exists():
             window.destroy()
     except Exception:
-        # Python 3.14 + CustomTkinter can raise TclError during command cleanup.
         pass
 
 
 def create_first_connection_ui(username, on_password_changed=None, on_back=None, back_button_text="Annuler"):
+    """Fenêtre de première connexion : force l'utilisateur à choisir un nouveau mot de passe avant d'accéder au menu."""
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
@@ -82,9 +86,8 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
     app.resizable(True, True)
     center_window(app, 600, 520)
 
-    # Pattern de navigation différée : on stocke le callback, on quitte mainloop,
-    # cleanup_window() s'exécute, puis on appelle le callback dans un contexte propre.
     def schedule_navigation(callback, *args, **kwargs):
+        """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
         nonlocal next_action
         if callable(callback):
             next_action = lambda: callback(*args, **kwargs)
@@ -165,11 +168,11 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
         command=toggle_password_visibility,
     ).pack(anchor="w")
 
-
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(16, 0))
 
     def on_submit_password_change():
+        """Vérifie la correspondance des deux champs, valide la policy puis transmet au callback."""
         new_password = entry_new_password.get().strip()
         confirm_password = entry_confirm_password.get().strip()
 
@@ -181,8 +184,6 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
             messagebox.showwarning("Mot de passe invalide", "Les deux mots de passe saisis sont differents.")
             return
 
-        # Validation de policy uniquement ici (changement de mot de passe),
-        # jamais à la connexion.
         is_valid, error_message = validate_password_policy(
             new_password,
             min_lowercase=1,
@@ -205,7 +206,7 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
         hover_color=COLORS["primary_hover"],
         font=("Segoe UI", 14, "bold"),
         command=on_submit_password_change,
-        ).pack(side="left", expand=True, fill="x", padx=(0, 8))
+    ).pack(side="left", expand=True, fill="x", padx=(0, 8))
 
     ctk.CTkButton(
         actions,
@@ -227,7 +228,6 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
 
 
 # Alias mort — main.py importe create_inscription_ui depuis register_screen.
-# Conservé uniquement si un autre module importe encore depuis first_connection.
 def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text="Connexion"):
     create_first_connection_ui(
         username="",

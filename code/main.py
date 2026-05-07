@@ -3,7 +3,7 @@ import ctypes
 from pathlib import Path
 from PIL import Image, ImageTk
 
-# Icône barre des tâches Windows — AVANT tout import tkinter/ctk
+# Icône barre des tâches Windows — doit être défini AVANT tout import tkinter/ctk.
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("IpCrypt.NetworkTool.1.0")
 
 BASE = Path(__file__).resolve().parent
@@ -11,7 +11,9 @@ ICO  = BASE / "images" / "menuIpCrypt.ico"
 PNG  = BASE / "images" / "menuIpCrypt.png"
 ICO2 = BASE / "images" / "iconeIpCrypt.ico"
 
+
 def show_splash() -> tk.Tk:
+    """Affiche le splash screen animé pendant le chargement des modules lourds."""
     splash = tk.Tk()
     splash.overrideredirect(True)
     splash.configure(bg="#ffffff")
@@ -33,20 +35,22 @@ def show_splash() -> tk.Tk:
     dots_label = tk.Label(splash, text="Chargement", font=("Segoe UI", 11), bg="#ffffff", fg="#5b6b84")
     dots_label.pack(pady=(4, 0))
 
-    after_id = None  # track the callback
+    after_id = None
 
     def animate_dots(count=0):
+        """Anime les points de chargement en cycle de 0 à 3."""
         nonlocal after_id
         dots_label.config(text="Chargement" + "." * count)
         after_id = splash.after(400, animate_dots, (count + 1) % 4)
 
     animate_dots()
-    splash._dots_after_id = lambda: after_id  # expose pour annulation
+    splash._dots_after_id = lambda: after_id
     splash.update()
     return splash
 
+
 def launch(splash: tk.Tk) -> None:
-    # imports lourds ici — CTk, PIL, etc. chargés pendant que le splash est visible
+    """Détruit le splash, importe tous les écrans puis démarre la navigation depuis la connexion."""
     from screens.login_screen           import create_connexion_ui
     from screens.first_connection       import create_first_connection_ui
     from screens.register_screen        import create_inscription_ui
@@ -70,13 +74,12 @@ def launch(splash: tk.Tk) -> None:
 
     current_is_admin = False
 
-    # si dessous on retrouve chaque appel aux fonctions pour l'ouverture des pages
     def on_login_success(username=None, password=None, is_admin=None):
-        """Callback pour la connexion: hache et vérifie le mot de passe"""
+        """Vérifie les identifiants ; redirige vers la première connexion ou le menu selon le flag en base."""
         if not username or not password:
             messagebox.showerror("Erreur", "Nom d'utilisateur ou mot de passe manquant")
             return
-        
+
         if hashage_motDePasse(password, "connexion_ui", username):
             user = recuperation_utilisateur_database(username)
             db_is_admin = bool(user.get("is_admin")) if user else False
@@ -90,6 +93,7 @@ def launch(splash: tk.Tk) -> None:
             messagebox.showerror("Erreur d'authentification", "Nom d'utilisateur ou mot de passe incorrect")
 
     def on_first_connexion_success(username=None, new_password=None, is_admin=False):
+        """Met à jour le mot de passe en base puis ouvre le menu."""
         if not username or not new_password:
             messagebox.showerror("Erreur", "Donnees de changement de mot de passe incompletes")
             return
@@ -101,18 +105,19 @@ def launch(splash: tk.Tk) -> None:
             messagebox.showerror("Erreur", "Impossible de modifier le mot de passe.")
 
     def open_connexion() -> None:
-        #Affiche la page de connexion
-        #verifie que le login est correcte
+        """Ouvre l'écran de connexion."""
         create_connexion_ui(
             on_login_success=on_login_success,
             on_go_to_signup=None,
         )
 
     def open_inscription(from_menu: bool = False):
+        """Ouvre l'écran d'inscription ; le bouton retour pointe vers le menu si from_menu=True, sinon vers la connexion."""
         back_callback = open_menu if from_menu else open_connexion
         back_text     = "Retour menu" if from_menu else "Connexion"
 
         def after_signup(username=None, password=None, profile=None):
+            """Insère le nouvel utilisateur en base, puis rouvre l'écran d'inscription pour un autre ajout."""
             if not username or not password or not profile:
                 messagebox.showerror("Erreur", "Données d'inscription incomplètes")
                 return
@@ -125,6 +130,7 @@ def launch(splash: tk.Tk) -> None:
         create_inscription_ui(on_signup_success=after_signup, on_back=back_callback, back_button_text=back_text)
 
     def open_first_connexion(username: str, is_admin: bool):
+        """Ouvre l'écran de changement de mot de passe obligatoire pour les nouveaux comptes."""
         create_first_connection_ui(
             username=username,
             on_password_changed=lambda username, new_password: on_first_connexion_success(
@@ -137,6 +143,7 @@ def launch(splash: tk.Tk) -> None:
         )
 
     def open_menu(is_admin=None, username=None):
+        """Ouvre le menu principal en mémorisant le rôle admin pour la session en cours."""
         nonlocal current_is_admin
         if is_admin is not None:
             current_is_admin = is_admin
@@ -150,6 +157,7 @@ def launch(splash: tk.Tk) -> None:
         )
 
     def open_ip_menu():
+        """Ouvre le sous-menu Gestion IP."""
         create_menu_ip_ui(
             on_open_subnet_verification=open_subnet_verification,
             on_open_definer_classe=open_definer_classe,
@@ -166,6 +174,7 @@ def launch(splash: tk.Tk) -> None:
     def open_get_network():             create_get_network_ui(on_back=open_ip_menu)
 
     open_connexion()
+
 
 if __name__ == "__main__":
     splash = show_splash()

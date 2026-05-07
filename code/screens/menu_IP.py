@@ -6,13 +6,15 @@ ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# ══════════════════════════════════════════════
+# Interface CustomTkinter
+# ══════════════════════════════════════════════
+
 COLORS = {
     "bg": "#eef1f6",
     "surface": "#ffffff",
     "primary": "#3f5fa8",
     "primary_hover": "#355190",
-    # "danger": "#d9484897",
-    # "danger_hover": "#b93a3a",
     "danger": "#b05f5f",
     "danger_hover": "#994f4f",
     "text": "#16233b",
@@ -20,7 +22,9 @@ COLORS = {
     "border": "#cfd8e6",
 }
 
+
 def center_window(window: ctk.CTk, width: int, height: int) -> None:
+    """Centre la fenêtre sur l'écran."""
     screen_w = window.winfo_screenwidth()
     screen_h = window.winfo_screenheight()
     pos_x = int((screen_w - width) / 2)
@@ -29,9 +33,7 @@ def center_window(window: ctk.CTk, width: int, height: int) -> None:
 
 
 def cleanup_window(window: ctk.CTk) -> None:
-    # CustomTkinter laisse des callbacks after() en vie (animations, DPI checks).
-    # Si on détruit la fenêtre sans les annuler, Tk fire sur des widgets morts
-    # → TclError "invalid command name". On draine d'abord, puis destroy.
+    """Détruit la fenêtre proprement en annulant les callbacks after() pour éviter les TclError sur widgets morts."""
     try:
         if window.winfo_exists():
             window.withdraw()
@@ -59,7 +61,6 @@ def cleanup_window(window: ctk.CTk) -> None:
         if window.winfo_exists():
             window.destroy()
     except Exception:
-        # Python 3.14 + CustomTkinter can raise TclError during command cleanup.
         pass
 
 
@@ -71,6 +72,7 @@ def create_menu_ip_ui(
     on_back=None,
     is_admin=False,
 ):
+    """Sous-menu Gestion IP : liste les outils d'analyse d'adresses IP et route vers l'outil sélectionné."""
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
@@ -80,10 +82,8 @@ def create_menu_ip_ui(
     app.resizable(True, True)
     center_window(app, 720, 520)
 
-    # Pattern de navigation différée : on stocke le callback, on quitte mainloop,
-    # cleanup_window() s'exécute, puis on appelle le callback dans un contexte propre.
-    # Appeler le callback directement ici planterait car mainloop() n'est pas terminé.
     def schedule_navigation(callback, *args, **kwargs):
+        """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
         nonlocal next_action
         if callable(callback):
             next_action = lambda: callback(*args, **kwargs)
@@ -94,7 +94,7 @@ def create_menu_ip_ui(
 
     ctk.CTkLabel(
         container,
-        text="Menu principal",
+        text="Gestion IP",
         font=("Segoe UI", 34, "bold"),
         text_color=COLORS["text"],
     ).pack(anchor="center")
@@ -121,9 +121,6 @@ def create_menu_ip_ui(
         "Recherche masque IP",
         "Définir réseau et sous réseau",
     ]
-    # "Inscription" visible seulement pour les admins — inséré en tête pour mise en évidence.
-    if is_admin:
-        modules.insert(0, "Inscription")
 
     modules_var = ctk.StringVar(value=modules[0])
 
@@ -157,8 +154,8 @@ def create_menu_ip_ui(
         ).pack(anchor="w", padx=12, pady=10)
 
     def on_open_selected_module():
+        """Lit l'outil sélectionné et déclenche le callback correspondant via la table de dispatch."""
         selected = modules_var.get()
-        # Table de dispatch : évite une chaîne if/elif fragile à l'ajout de modules.
         routes = {
             "IP Vérification": on_open_subnet_verification,
             "Recherche classe IP": on_open_definer_classe,
