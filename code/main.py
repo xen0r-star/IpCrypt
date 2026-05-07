@@ -47,14 +47,18 @@ def show_splash() -> tk.Tk:
 
 def launch(splash: tk.Tk) -> None:
     # imports lourds ici — CTk, PIL, etc. chargés pendant que le splash est visible
-    from screens.login_screen      import create_connexion_ui
-    from screens.first_connection  import create_first_connection_ui
-    from screens.register_screen   import create_inscription_ui
-    from screens.menu_screen       import create_menu_ui
-    from screens.network_comparator import create_ip_association_ui
-    from screens.menu_IP             import create_menu_ip_ui
-    from screens.cidr_explorer     import create_cidr_table_ui
-    from utils.auth_service        import hashage_motDePasse, recuperation_utilisateur_database
+    from screens.login_screen           import create_connexion_ui
+    from screens.first_connection       import create_first_connection_ui
+    from screens.register_screen        import create_inscription_ui
+    from screens.menu_screen            import create_menu_ui
+    from screens.network_comparator     import create_ip_association_ui
+    from screens.menu_IP                import create_menu_ip_ui
+    from screens.subnet_verification    import create_ip_verification_ui
+    from screens.definer_classe         import create_definer_class_ui
+    from screens.get_mask               import create_get_mask_ui
+    from screens.get_network            import create_get_ntework_ui
+    from screens.cidr_explorer          import create_cidr_table_ui
+    from utils.auth_service             import hashage_motDePasse, recuperation_utilisateur_database
     from tkinter import messagebox
 
     try:
