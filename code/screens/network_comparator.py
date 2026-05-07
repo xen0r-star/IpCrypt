@@ -127,7 +127,7 @@ def create_ip_association_ui(on_back=None):
     app.title("IP Association")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
-    center_window(app, 980, 860)
+    center_window(app, 960, 680)
 
     def schedule_navigation(callback, *args, **kwargs):
         nonlocal next_action
@@ -190,8 +190,8 @@ def create_ip_association_ui(on_back=None):
 
         reseau1, reseau2, verdict, meme_reseau = calcule_adresse_reseau(ip1, masque1, ip2, masque2)
 
-        r1_str = '.'.join(str(octet).zfill(3) for octet in reseau1)
-        r2_str = '.'.join(str(octet).zfill(3) for octet in reseau2)
+        r1_str = '.'.join(str(octet) for octet in reseau1)
+        r2_str = '.'.join(str(octet) for octet in reseau2)
 
         couleur = COLORS["success"] if meme_reseau else COLORS["error"]
 
@@ -209,8 +209,8 @@ def create_ip_association_ui(on_back=None):
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(16, 0))
 
-    ctk.CTkButton(actions, text="Associer", height=46, fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"], font=("Segoe UI", 15, "bold"), command=on_associer).pack(side="left", expand=True, fill="x", padx=(0, 10))
-    ctk.CTkButton(actions, text="Effacer", height=46, fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"], font=("Segoe UI", 15, "bold"), command=on_effacer).pack(side="left", fill="x", padx=(10, 0))
+    ctk.CTkButton(actions, text="Associer", height=46, fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"], font=("Segoe UI", 15, "bold"), command=on_associer).pack(side="left", expand=True, fill="x", padx=(0, 6))
+    ctk.CTkButton(actions, text="Effacer", height=46, fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"], font=("Segoe UI", 15, "bold"), command=on_effacer).pack(side="left", expand=True, fill="x", padx=(6, 6))
     ctk.CTkButton(
         actions,
         text="Retour au menu",
@@ -222,7 +222,7 @@ def create_ip_association_ui(on_back=None):
         border_color=COLORS["border"],
         font=("Segoe UI", 15, "bold"),
         command=(lambda: schedule_navigation(on_back) if callable(on_back) else app.quit()),
-    ).pack(side="left", fill="x", padx=(10, 0))
+    ).pack(side="left", expand=True, fill="x", padx=(6, 0))
 
     app.mainloop()
     cleanup_window(app)

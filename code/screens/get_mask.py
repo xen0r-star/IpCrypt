@@ -139,7 +139,7 @@ def create_get_mask_ui(on_back=None):
     app.title("IP Verification")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
-    center_window(app, 600, 450)
+    center_window(app, 720, 520)
 
     def schedule_navigation(callback, *args, **kwargs):
         nonlocal next_action
