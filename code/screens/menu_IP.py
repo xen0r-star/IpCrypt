@@ -77,7 +77,7 @@ def create_menu_ip_ui(
     next_action = None
     app.title("Gestion adresse IP")
     app.configure(fg_color=COLORS["bg"])
-    app.resizable(False, False)
+    app.resizable(True, True)
     center_window(app, 720, 520)
 
     # Pattern de navigation différée : on stocke le callback, on quitte mainloop,

@@ -126,7 +126,7 @@ def create_ip_association_ui(on_back=None):
     next_action = None
     app.title("IP Association")
     app.configure(fg_color=COLORS["bg"])
-    app.resizable(False, False)
+    app.resizable(True, True)
     center_window(app, 980, 860)
 
     def schedule_navigation(callback, *args, **kwargs):

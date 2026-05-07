@@ -79,7 +79,7 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
     next_action = None
     app.title("Changement mot de passe lors de la premiere inscription")
     app.configure(fg_color=COLORS["bg"])
-    app.resizable(False, False)
+    app.resizable(True, True)
     center_window(app, 600, 520)
 
     # Pattern de navigation différée : on stocke le callback, on quitte mainloop,
