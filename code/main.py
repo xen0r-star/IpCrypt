@@ -56,7 +56,7 @@ def launch(splash: tk.Tk) -> None:
     from screens.subnet_verification    import create_ip_verification_ui
     from screens.definer_classe         import create_definer_class_ui
     from screens.get_mask               import create_get_mask_ui
-    from screens.get_network            import create_get_ntework_ui
+    from screens.get_network            import create_get_network_ui
     from screens.cidr_explorer          import create_cidr_table_ui
     from utils.auth_service             import hashage_motDePasse, recuperation_utilisateur_database
     from tkinter import messagebox
