@@ -118,7 +118,7 @@ def launch(splash: tk.Tk) -> None:
                 return
             if hashage_motDePasse(password, "inscription_ui", username, profile):
                 messagebox.showinfo("Succès", "Compte créé avec succès!")
-                back_callback()
+                open_inscription(from_menu=from_menu)
             else:
                 messagebox.showerror("Erreur", "Erreur lors de la création du compte")
 
