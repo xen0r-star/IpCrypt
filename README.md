@@ -80,7 +80,7 @@ User access is controlled via login (admin / client profiles). Accounts and hash
         <tr>
             <td align="center"><strong>Menu</strong><br/><img src="./code/images/pageMenu.png" alt="Page menu" width="300"/></td>
             <td align="center"><strong>Gestion IP</strong><br/><img src="./code/images/pageMenuIp.png" alt="Page gestion IP" width="300"/></td>
-            <td align="center"><strong>Verification IP</strong><br/><img src="./code/images/pageVerificationIp.png" alt="Page verification IP" width="300"/></td>
+            <td align="center"><strong>Verification IP</strong><br/><img src="./code/images/pageIpVerification.png" alt="Page verification IP" width="300"/></td>
         </tr>
         <tr>
             <td align="center"><strong>Classe IP</strong><br/><img src="./code/images/pageDefinerClasse.png" alt="Page classe IP" width="300"/></td>
