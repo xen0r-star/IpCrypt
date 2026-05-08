@@ -75,22 +75,22 @@ User access is controlled via login (admin / client profiles). Accounts and hash
         <tr>
             <td align="center"><strong>Splash</strong><br/><img src="./code/images/pageSplash.png" alt="Splash screen" width="300"/></td>
             <td align="center"><strong>Connexion</strong><br/><img src="./code/images/pageConnexion.png" alt="Page connexion" width="300"/></td>
-            <td align="center"><strong>Inscription</strong><br/><img src="./code/images/pageInscription.png" alt="Page inscription" width="300"/></td>
+            <td align="center"><strong>Premiere connexion</strong><br/><img src="./code/images/pagePremiereConnexion.png" alt="Page Premiere connexion" width="300"/></td>
         </tr>
         <tr>
+            <td align="center"><strong>Inscription</strong><br/><img src="./code/images/pageInscription.png" alt="Page inscription" width="300"/></td>
             <td align="center"><strong>Menu</strong><br/><img src="./code/images/pageMenu.png" alt="Page menu" width="300"/></td>
             <td align="center"><strong>Gestion IP</strong><br/><img src="./code/images/pageMenuIp.png" alt="Page gestion IP" width="300"/></td>
+        </tr>
+        <tr>
             <td align="center"><strong>Verification IP</strong><br/><img src="./code/images/pageIpVerification.png" alt="Page verification IP" width="300"/></td>
+            <td align="center"><strong>Classe IP</strong><br/><img src="./code/images/pageRechercheClasseIp.png" alt="Page classe IP" width="300"/></td>
+            <td align="center"><strong>Masque IP</strong><br/><img src="./code/images/pageRechercheMasqueIp.png" alt="Page masque IP" width="300"/></td>
         </tr>
         <tr>
-            <td align="center"><strong>Classe IP</strong><br/><img src="./code/images/pageDefinerClasse.png" alt="Page classe IP" width="300"/></td>
-            <td align="center"><strong>Masque IP</strong><br/><img src="./code/images/pageGetMask.png" alt="Page masque IP" width="300"/></td>
-            <td align="center"><strong>Réseau / Sous-réseau</strong><br/><img src="./code/images/pageGetNetwork.png" alt="Page réseau" width="300"/></td>
-        </tr>
-        <tr>
+            <td align="center"><strong>Réseau / Sous-réseau</strong><br/><img src="./code/images/pageDefinirReseau.png" alt="Page réseau" width="300"/></td>
             <td align="center"><strong>Association IP</strong><br/><img src="./code/images/pageAssociationIp.png" alt="Page association IP" width="300"/></td>
             <td align="center"><strong>Tableau CIDR</strong><br/><img src="./code/images/pageTableauCIDR.png" alt="Page tableau CIDR" width="300"/></td>
-            <td></td>
         </tr>
     </table>
 </div>
