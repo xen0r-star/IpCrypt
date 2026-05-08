@@ -2,7 +2,7 @@ import os
 
 from argon2 import PasswordHasher, Type, exceptions
 from dotenv import load_dotenv
-from psycopg import connect
+from psycopg import connect, OperationalError
 from psycopg.rows import dict_row
 
 load_dotenv()
@@ -22,14 +22,14 @@ pwdHasher = PasswordHasher(
     type=Type.ID
 )
 
+_connection = None
 
-def get_connection():
-    """Ouvre une connexion SSL authentifiée à la base PostgreSQL via les variables d'environnement."""
+
+def _open_connection():
     host = os.getenv("DB_HOST")
     password = os.getenv("DB_PASSWORD")
     if not host or not password:
         raise ValueError("DB_HOST et DB_PASSWORD doivent etre definis dans les variables d'environnement (.env).")
-
     return connect(
         host=host,
         port=os.getenv("DB_PORT", "5432"),
@@ -38,16 +38,39 @@ def get_connection():
         password=password,
         sslmode=os.getenv("DB_SSLMODE", "require"),
         row_factory=dict_row,
+        autocommit=True,
     )
+
+
+def get_connection():
+    """Retourne la connexion persistante, en la recréant si elle est fermée ou cassée."""
+    global _connection
+    if _connection is None or _connection.closed:
+        _connection = _open_connection()
+    return _connection
+
+
+def _run(op):
+    """Exécute op(cursor), avec une reconnexion automatique en cas d'erreur réseau."""
+    global _connection
+    try:
+        with get_connection().cursor() as cur:
+            return op(cur)
+    except OperationalError:
+        _connection = None
+        with get_connection().cursor() as cur:
+            return op(cur)
 
 
 def recuperation_motDePasse_database(username):
     """Retourne la ligne utilisateur (username, password, is_admin, is_firstconnexion) ou None si inexistant."""
-    with get_connection() as connection:
-        with connection.cursor() as cursor:
-            sql = "SELECT username, password, is_admin, is_firstconnexion FROM users WHERE username=%s"
-            cursor.execute(sql, (username,))
-            return cursor.fetchone()
+    def op(cur):
+        cur.execute(
+            "SELECT username, password, is_admin, is_firstconnexion FROM users WHERE username=%s",
+            (username,),
+        )
+        return cur.fetchone()
+    return _run(op)
 
 
 def recuperation_utilisateur_database(username):
@@ -57,24 +80,24 @@ def recuperation_utilisateur_database(username):
 
 def inscription_dans_database(username: str, profilUser: str, passwordHashed: str) -> bool:
     """Insère un nouvel utilisateur en base. Lève UniqueViolation si le nom d'utilisateur est déjà pris."""
-    with get_connection() as connection:
-        with connection.cursor() as cursor:
-            sql = "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s)"
-            is_admin = profilUser == "Admin"
-            cursor.execute(sql, (username, passwordHashed, is_admin))
-        connection.commit()
-    return True
+    def op(cur):
+        cur.execute(
+            "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s)",
+            (username, passwordHashed, profilUser == "Admin"),
+        )
+        return True
+    return _run(op)
 
 
 def update_motDePasse_premiere_connexion_database(username: str, passwordHashed: str) -> bool:
     """Met à jour le mot de passe et bascule is_firstconnexion à FALSE. Retourne False si l'utilisateur est introuvable."""
-    with get_connection() as connection:
-        with connection.cursor() as cursor:
-            sql = "UPDATE users SET password=%s, is_firstconnexion=FALSE WHERE username=%s"
-            cursor.execute(sql, (passwordHashed, username))
-            updated_rows = cursor.rowcount
-        connection.commit()
-    return updated_rows == 1
+    def op(cur):
+        cur.execute(
+            "UPDATE users SET password=%s, is_firstconnexion=FALSE WHERE username=%s",
+            (passwordHashed, username),
+        )
+        return cur.rowcount == 1
+    return _run(op)
 
 
 def verification_motDePasse(passwordToVerify: str, passwordHashed: str) -> bool:

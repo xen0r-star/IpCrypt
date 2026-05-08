@@ -80,17 +80,23 @@ def launch(splash: tk.Tk) -> None:
             messagebox.showerror("Erreur", "Nom d'utilisateur ou mot de passe manquant")
             return
 
-        if hashage_motDePasse(password, "connexion_ui", username):
-            user = recuperation_utilisateur_database(username)
-            db_is_admin = bool(user.get("is_admin")) if user else False
-            is_first_connexion = bool(user.get("is_firstconnexion")) if user else False
-
-            if is_first_connexion:
-                open_first_connexion(username=username, is_admin=db_is_admin)
-            else:
-                open_menu(is_admin=db_is_admin, username=username)
-        else:
+        user = recuperation_utilisateur_database(username)
+        if user is None:
             messagebox.showerror("Erreur d'authentification", "Nom d'utilisateur ou mot de passe incorrect")
+            return
+
+        from utils.auth_service import verification_motDePasse
+        if not verification_motDePasse(password, user.get("password", "")):
+            messagebox.showerror("Erreur d'authentification", "Nom d'utilisateur ou mot de passe incorrect")
+            return
+
+        db_is_admin = bool(user.get("is_admin"))
+        is_first_connexion = bool(user.get("is_firstconnexion"))
+
+        if is_first_connexion:
+            open_first_connexion(username=username, is_admin=db_is_admin)
+        else:
+            open_menu(is_admin=db_is_admin, username=username)
 
     def on_first_connexion_success(username=None, new_password=None, is_admin=False):
         """Met à jour le mot de passe en base puis ouvre le menu."""

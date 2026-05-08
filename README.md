@@ -10,7 +10,7 @@ IP verification, subnet analysis, cross-network association, CIDR table, user ma
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![CustomTkinter](https://img.shields.io/badge/CustomTkinter-5.2.2-2CA5E0?style=for-the-badge)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-psycopg3-336791?style=for-the-badge&logo=postgresql&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Phase%202-blue?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Phase%201-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Academic-lightgrey?style=for-the-badge)
 [![Discord Push](https://github.com/Coco-Lapin/IpCrypt/actions/workflows/discord_push.yml/badge.svg)](https://github.com/Coco-Lapin/IpCrypt/actions/workflows/discord_push.yml)
 
@@ -58,7 +58,11 @@ User access is controlled via login (admin / client profiles). Accounts and hash
 | First connection | Done | Forced password change on first login for admin-created accounts |
 | Registration | Done | Admin-only user creation with profile selection |
 | Menu | Done | Role-aware navigation (admin vs client) |
+| Gestion IP | Done | Sub-menu routing to all IP analysis tools |
 | IP Verification | Done | Class detection, broadcast/network/host classification |
+| Recherche classe IP | Done | Class (A–E) + public/private/loopback/APIPA detection |
+| Recherche masque IP | Done | Classful mask from first octet |
+| Réseau et sous-réseau | Done | Network address (classful) + subnet address (AND with mask) |
 | IP Association | Done | Bilateral cross-network visibility check |
 | CIDR Table | Done | /8–/30 matrix with binary + decimal + Excel export |
 
@@ -75,12 +79,17 @@ User access is controlled via login (admin / client profiles). Accounts and hash
         </tr>
         <tr>
             <td align="center"><strong>Menu</strong><br/><img src="./code/images/pageMenu.png" alt="Page menu" width="300"/></td>
+            <td align="center"><strong>Gestion IP</strong><br/><img src="./code/images/pageMenuIp.png" alt="Page gestion IP" width="300"/></td>
             <td align="center"><strong>Verification IP</strong><br/><img src="./code/images/pageVerificationIp.png" alt="Page verification IP" width="300"/></td>
-            <td align="center"><strong>Association IP</strong><br/><img src="./code/images/pageAssociationIp.png" alt="Page association IP" width="300"/></td>
         </tr>
         <tr>
+            <td align="center"><strong>Classe IP</strong><br/><img src="./code/images/pageDefinerClasse.png" alt="Page classe IP" width="300"/></td>
+            <td align="center"><strong>Masque IP</strong><br/><img src="./code/images/pageGetMask.png" alt="Page masque IP" width="300"/></td>
+            <td align="center"><strong>Réseau / Sous-réseau</strong><br/><img src="./code/images/pageGetNetwork.png" alt="Page réseau" width="300"/></td>
+        </tr>
+        <tr>
+            <td align="center"><strong>Association IP</strong><br/><img src="./code/images/pageAssociationIp.png" alt="Page association IP" width="300"/></td>
             <td align="center"><strong>Tableau CIDR</strong><br/><img src="./code/images/pageTableauCIDR.png" alt="Page tableau CIDR" width="300"/></td>
-            <td></td>
             <td></td>
         </tr>
     </table>
@@ -107,20 +116,30 @@ flowchart LR
     FC -->|cancel| C
     D -->|logout| C
 
-    subgraph modules["Modules"]
+    subgraph iptools["Gestion IP"]
         direction TB
+        MIP[menu_IP]
         F[subnet_verification]
+        DC[definer_classe]
+        GM[get_mask]
+        GN[get_network]
+        MIP --> F & DC & GM & GN
+    end
+
+    subgraph other["Other modules"]
+        direction TB
         G[network_comparator]
         H[cidr_explorer]
         E[register_screen]
     end
 
-    D -->|IP Verification| F
+    D -->|Gestion IP| MIP
     D -->|IP Association| G
     D -->|CIDR Table| H
     D -->|admin only| E
 
-    F -->|back| D
+    F & DC & GM & GN -->|back| MIP
+    MIP -->|back| D
     G -->|back| D
     H -->|back| D
     E -->|back| D
@@ -139,7 +158,11 @@ graph LR
         IN(register_screen)
         FC(first_connection)
         MN(menu_screen)
+        MIP(menu_IP)
         IV(subnet_verification)
+        DC(definer_classe)
+        GM(get_mask)
+        GN(get_network)
         IA(network_comparator)
         CT(cidr_explorer)
     end
@@ -157,14 +180,14 @@ graph LR
         DOT([python-dotenv])
     end
 
-    MAIN --> CX & IN & FC & MN & IV & IA & CT
+    MAIN --> CX & IN & FC & MN & MIP & IV & DC & GM & GN & IA & CT
     MAIN --> PV
     CX --> PP
     IN --> PP
     FC --> PP
     PV --> AR & PG & DOT
     CT --> PD
-    CX & IN & FC & MN & IV & IA & CT --> CTK
+    CX & IN & FC & MN & MIP & IV & DC & GM & GN & IA & CT --> CTK
 ```
 
 ---
@@ -182,12 +205,13 @@ IpCrypt/
 │   │   ├── first_connection.py     # Forced password change on first login
 │   │   ├── register_screen.py      # Admin-only user creation
 │   │   ├── menu_screen.py          # Role-aware module selector
+│   │   ├── menu_IP.py              # Sub-menu: selector for all IP analysis tools
 │   │   ├── subnet_verification.py  # IP class + broadcast/network/host check
 │   │   ├── network_comparator.py   # AND-based network calc, bilateral visibility
 │   │   ├── cidr_explorer.py        # CIDR matrix /8–/30, xlsx export
-│   │   ├── definer_classe.py       # Standalone: class + public/private detection
-│   │   ├── get_mask.py             # Standalone: classful mask from IP
-│   │   └── get_network.py          # Standalone: network + subnet address calc
+│   │   ├── definer_classe.py       # Class (A–E) + public/private/loopback/APIPA detection
+│   │   ├── get_mask.py             # Classful mask from first octet
+│   │   └── get_network.py          # Network + subnet address calc
 │   ├── utils/
 │   │   ├── auth_policy.py          # Password rule validator (parametric)
 │   │   └── auth_service.py         # Argon2 hashing + PostgreSQL ops
@@ -197,7 +221,9 @@ IpCrypt/
 │   │   ├── MenuHome.py
 │   │   ├── inscription_controller.py
 │   │   ├── ip_association.py
-│   │   └── menu_controller.py
+│   │   ├── menu_controller.py
+│   │   ├── test-association.py
+│   │   └── test_network_comparator.py
 │   ├── database/
 │   │   └── connection.sql          # PostgreSQL schema
 │   └── images/
@@ -337,14 +363,35 @@ python main.py
 ### Menu (`screens/menu_screen.py`)
 
 - Radio-button module selector with dispatch table
-- Admin view: Register, IP Verification, IP Association, CIDR Table
-- Client view: IP Verification, IP Association, CIDR Table
+- Admin view: Inscription, Gestion IP, IP Association, Tableau CIDR
+- Client view: Gestion IP, IP Association, Tableau CIDR
+
+### Gestion IP (`screens/menu_IP.py`)
+
+- Sub-menu between the main menu and the IP analysis tools
+- Radio-button selector for: IP Vérification, Recherche classe IP, Recherche masque IP, Définir réseau et sous-réseau
+- Routes to the selected tool; back button returns to main menu
 
 ### IP Verification (`screens/subnet_verification.py`)
 
 - Octet-by-octet input with real-time key validation (0–255 only, max 3 digits)
 - Detects: broadcast address, network address, or valid host — per class (A/B/C)
 - Class detection via first octet range matching
+
+### Recherche classe IP (`screens/definer_classe.py`)
+
+- Detects IP class (A–E) from first octet range
+- Identifies address type: public, private (RFC 1918), loopback, or APIPA
+
+### Recherche masque IP (`screens/get_mask.py`)
+
+- Returns the classful default mask for a given IP
+- Based on class detection from first octet
+
+### Réseau et sous-réseau (`screens/get_network.py`)
+
+- Computes the classful network address from the IP
+- Computes the subnet address via AND with a user-supplied mask
 
 ### IP Association (`screens/network_comparator.py`)
 
@@ -358,14 +405,6 @@ python main.py
 - Generates /8 to /30 (23 rows) via `build_cidr_rows()`
 - Columns: CIDR notation, binary mask (dotted), decimal mask
 - Export to `.xlsx` via file dialog
-
-### Standalone screens (not wired to main navigation)
-
-| File | What it does |
-|---|---|
-| `definer_classe.py` | Class (A–E) + public/private/loopback/APIPA type detection |
-| `get_mask.py` | Classful mask from first octet |
-| `get_network.py` | Network address (classful) + subnet address (AND with mask) |
 
 ---
 
@@ -391,8 +430,8 @@ The validator is parametric — thresholds can be adjusted per call site. Policy
 - [x] Input validation on IP Verification (per-key octet validation 0–255)
 - [x] First connection flow (forced password change for admin-created accounts)
 - [x] DB credentials via `.env` (python-dotenv)
+- [x] Wire IP tools (definer_classe, get_mask, get_network) into navigation via menu_IP sub-menu
 - [ ] Centralize shared UI helpers (`COLORS`, `center_window`, `cleanup_window`) into `screens/shared.py` — currently duplicated in every screen
-- [ ] Wire standalone screens (`definer_classe`, `get_mask`, `get_network`) into a unified IP Verification module or sub-navigation
 - [ ] Unit tests for network calculation functions (`calcule_adresse_reseau`, `build_cidr_rows`, `verificationIP`)
 - [ ] Server-side admin access enforcement (currently only UI flag)
 - [ ] Clean up or integrate `code/Controller/` legacy files
@@ -401,4 +440,4 @@ The validator is parametric — thresholds can be adjusted per call site. Policy
 
 ## Author
 
-Project built as part of the BAC2 SR curriculum — Phase 2.
+Project built as part of the BAC2 SR curriculum — Phase 1.
