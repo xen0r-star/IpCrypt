@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from screens.network_comparator import calcule_adresse_reseau
+from screens.ip_association import calcule_adresse_reseau
 
 
 def _oct(ip_str: str) -> list[str]:
