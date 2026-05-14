@@ -163,19 +163,23 @@ def create_ip_association_ui(on_back=None):
     ctk.CTkLabel(container, text="Compare deux adresses IP et détermine si elles sont dans le même réseau", font=("Segoe UI", 16), text_color=COLORS["muted"]).pack(anchor="center", pady=(6, 20))
 
     card = ctk.CTkFrame(container, fg_color=COLORS["surface"], border_width=1, border_color=COLORS["border"], corner_radius=14)
-    card.pack(fill="both", expand=True)
+    card.pack(fill="x")
 
     section_1 = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
     section_1.pack(fill="x", padx=24, pady=(20, 12))
     ctk.CTkLabel(section_1, text="Adresse 1", font=("Segoe UI", 15, "bold"), text_color=COLORS["text"]).pack(anchor="w", padx=16, pady=(14, 10))
-    ip_octet_group(section_1, "IP 1", entries_store)
-    ip_octet_group(section_1, "Masque 1", entries_store)
+    inputs_1 = ctk.CTkFrame(section_1, fg_color="transparent")
+    inputs_1.pack(fill="x", padx=16, pady=(0, 14))
+    ip_octet_group(inputs_1, "IP 1", entries_store)
+    ip_octet_group(inputs_1, "Masque 1", entries_store)
 
     section_2 = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
     section_2.pack(fill="x", padx=24, pady=(0, 16))
     ctk.CTkLabel(section_2, text="Adresse 2", font=("Segoe UI", 15, "bold"), text_color=COLORS["text"]).pack(anchor="w", padx=16, pady=(14, 10))
-    ip_octet_group(section_2, "IP 2", entries_store)
-    ip_octet_group(section_2, "Masque 2", entries_store)
+    inputs_2 = ctk.CTkFrame(section_2, fg_color="transparent")
+    inputs_2.pack(fill="x", padx=16, pady=(0, 14))
+    ip_octet_group(inputs_2, "IP 2", entries_store)
+    ip_octet_group(inputs_2, "Masque 2", entries_store)
 
     result_frame = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
     result_frame.pack(fill="x", padx=24, pady=(0, 16))
@@ -228,20 +232,38 @@ def create_ip_association_ui(on_back=None):
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(16, 0))
 
-    ctk.CTkButton(actions, text="Associer", height=46, fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"], font=("Segoe UI", 15, "bold"), command=on_associer).pack(side="left", expand=True, fill="x", padx=(0, 6))
-    ctk.CTkButton(actions, text="Effacer", height=46, fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"], font=("Segoe UI", 15, "bold"), command=on_effacer).pack(side="left", expand=True, fill="x", padx=(6, 6))
+    ctk.CTkButton(
+        actions,
+        text="Calculer",
+        height=42,
+        fg_color=COLORS["primary"],
+        hover_color=COLORS["primary_hover"],
+        font=("Segoe UI", 14, "bold"),
+        command=on_associer,
+    ).pack(side="left", expand=True, fill="x", padx=(0, 8))
+
+    ctk.CTkButton(
+        actions,
+        text="Effacer",
+        height=42,
+        fg_color=COLORS["danger"],
+        hover_color=COLORS["danger_hover"],
+        font=("Segoe UI", 14, "bold"),
+        command=on_effacer,
+    ).pack(side="left", fill="x", padx=(8, 0))
+
     ctk.CTkButton(
         actions,
         text="Retour au menu",
-        height=46,
+        height=42,
         fg_color=COLORS["surface"],
         hover_color="#e8ebf0",
         text_color=COLORS["text"],
         border_width=1,
         border_color=COLORS["border"],
-        font=("Segoe UI", 15, "bold"),
+        font=("Segoe UI", 14, "bold"),
         command=(lambda: schedule_navigation(on_back) if callable(on_back) else app.quit()),
-    ).pack(side="left", expand=True, fill="x", padx=(6, 0))
+    ).pack(side="left", fill="x", padx=(8, 0))
 
     app.mainloop()
     cleanup_window(app)
