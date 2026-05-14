@@ -162,8 +162,11 @@ def create_ip_association_ui(on_back=None):
     ctk.CTkLabel(container, text="IP Association", font=("Segoe UI", 38, "bold"), text_color=COLORS["text"]).pack(anchor="center")
     ctk.CTkLabel(container, text="Compare deux adresses IP et détermine si elles sont dans le même réseau", font=("Segoe UI", 16), text_color=COLORS["muted"]).pack(anchor="center", pady=(6, 20))
 
+    actions = ctk.CTkFrame(container, fg_color="transparent")
+    actions.pack(fill="x", pady=(16, 0), side="bottom")
+
     card = ctk.CTkFrame(container, fg_color=COLORS["surface"], border_width=1, border_color=COLORS["border"], corner_radius=14)
-    card.pack(fill="x")
+    card.pack(fill="both", expand=True)
 
     section_1 = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
     section_1.pack(fill="x", padx=24, pady=(20, 12))
@@ -228,9 +231,6 @@ def create_ip_association_ui(on_back=None):
             for entry in group:
                 entry.delete(0, "end")
         result_label.configure(text="", text_color=COLORS["muted"])
-
-    actions = ctk.CTkFrame(container, fg_color="transparent")
-    actions.pack(fill="x", pady=(16, 0))
 
     ctk.CTkButton(
         actions,
