@@ -111,7 +111,7 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str, entries_store: list) -
     inner = ctk.CTkFrame(octet_box, fg_color="transparent")
     inner.pack(padx=14, pady=12)
 
-    vcmd = (parent.winfo_toplevel().register(lambda val: val.isdigit() and len(val) <= 3 or val == ""), "%P")
+    vcmd = (parent.winfo_toplevel().register(lambda val: val.isdecimal() and len(val) <= 3 or val == ""), "%P")
 
     group_entries = []
     for i in range(4):
@@ -129,10 +129,39 @@ def lire_octets(group: list) -> list | None:
     octets = []
     for entry in group:
         val = entry.get().strip()
-        if not val.isdigit() or not (0 <= int(val) <= 255):
+        if not val.isdecimal() or not (0 <= int(val) <= 255):
             return None
         octets.append(str(int(val)).zfill(3))
     return octets
+
+
+def est_masque_valide(masque: list) -> bool:
+    """verifie que le masque est bien valide en verifiant si c'est bien une suite de 1 puis une suite de 0"""
+    binaire = "".join(bin(int(o))[2:].zfill(8) for o in masque)
+    return "01" not in binaire
+
+
+def caracteriser_adresse(ip: list, masque: list) -> str | None:
+    """Retourne un libellé si l'IP est une adresse spéciale (réseau, broadcast, loopback, multicast, classe E)."""
+    octets = [int(o) for o in ip]
+    bits_masque = [int(o) for o in masque]
+
+    if octets[0] == 127:
+        return "adresse loopback (machine locale)"
+    if 224 <= octets[0] <= 239:
+        return "adresse multicast"
+    if octets[0] >= 240:
+        return "adresse réservée (classe E)"
+
+    if bits_masque != [255, 255, 255, 255]:
+        reseau = [octets[i] & bits_masque[i] for i in range(4)]
+        if reseau == octets:
+            return "adresse de réseau (non assignable à un host)"
+        broadcast = [octets[i] | (255 - bits_masque[i]) for i in range(4)]
+        if broadcast == octets:
+            return "adresse de broadcast (non assignable à un host)"
+
+    return None
 
 
 def create_ip_association_ui(on_back=None):
@@ -166,6 +195,12 @@ def create_ip_association_ui(on_back=None):
     actions = ctk.CTkFrame(container, fg_color="transparent")
     actions.pack(fill="x", pady=(16, 0), side="bottom")
 
+    result_frame = ctk.CTkFrame(container, fg_color=COLORS["surface"], border_width=1, border_color=COLORS["border"], corner_radius=12)
+    result_frame.pack(fill="x", pady=(12, 0), side="bottom")
+
+    result_label = ctk.CTkLabel(result_frame, text="", font=("Segoe UI", 14), text_color=COLORS["muted"], justify="left", wraplength=860)
+    result_label.pack(anchor="w", padx=16, pady=14)
+
     card = ctk.CTkFrame(container, fg_color=COLORS["surface"], border_width=1, border_color=COLORS["border"], corner_radius=14)
     card.pack(fill="both", expand=True)
 
@@ -185,16 +220,10 @@ def create_ip_association_ui(on_back=None):
     ip_octet_group(inputs_2, "IP 2", entries_store)
     ip_octet_group(inputs_2, "Masque 2", entries_store)
 
-    result_frame = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
-    result_frame.pack(fill="x", padx=24, pady=(0, 16))
-
-    result_label = ctk.CTkLabel(result_frame, text="", font=("Segoe UI", 14), text_color=COLORS["muted"], justify="left")
-    result_label.pack(anchor="w", padx=16, pady=14)
-
     def on_inputs_changed(_event=None):
         """Avertit l'utilisateur que les valeurs ont changé et que le résultat affiché n'est plus à jour."""
         result_label.configure(
-            text="Valeurs modifiées. Clique sur Associer pour recalculer.",
+            text="Valeurs modifiées. Cliqué sur Calculer pour recalculer.",
             text_color=COLORS["muted"],
         )
 
@@ -214,17 +243,35 @@ def create_ip_association_ui(on_back=None):
             result_label.configure(text="Erreur : un ou plusieurs octets sont invalides (0-255).", text_color=COLORS["error"])
             return
 
+        if not est_masque_valide(masque1):
+            result_label.configure(text="Erreur : le masque 1 est invalide", text_color=COLORS["error"])
+            return
+        if not est_masque_valide(masque2):
+            result_label.configure(text="Erreur : le masque 2 est invalide", text_color=COLORS["error"])
+            return
+
         reseau1, reseau2, verdict, meme_reseau = calcule_adresse_reseau(ip1, masque1, ip2, masque2)
 
         r1_str = '.'.join(str(octet) for octet in reseau1)
         r2_str = '.'.join(str(octet) for octet in reseau2)
 
+        avertissements = []
+        if ip1 == ip2:
+            avertissements.append("IP 1 et IP 2 sont identiques (même machine)")
+        avert1 = caracteriser_adresse(ip1, masque1)
+        avert2 = caracteriser_adresse(ip2, masque2)
+        if avert1:
+            avertissements.append(f"IP 1 : {avert1}")
+        if avert2:
+            avertissements.append(f"IP 2 : {avert2}")
+
         couleur = COLORS["success"] if meme_reseau else COLORS["error"]
 
-        result_label.configure(
-            text=f"Réseau 1 : {r1_str}\nRéseau 2 : {r2_str}\n\n{verdict}",
-            text_color=couleur
-        )
+        texte = f"Réseau 1 : {r1_str}\nRéseau 2 : {r2_str}\n\n{verdict}"
+        if avertissements:
+            texte += "\n\nAttention :\n- " + "\n- ".join(avertissements)
+
+        result_label.configure(text=texte, text_color=couleur)
 
     def on_effacer():
         """Vide tous les champs de saisie et réinitialise le label de résultat."""
@@ -232,6 +279,8 @@ def create_ip_association_ui(on_back=None):
             for entry in group:
                 entry.delete(0, "end")
         result_label.configure(text="", text_color=COLORS["muted"])
+
+    app.bind("<Return>", lambda _e: on_associer())
 
     ctk.CTkButton(
         actions,

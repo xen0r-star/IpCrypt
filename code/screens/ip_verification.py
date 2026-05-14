@@ -146,7 +146,7 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
     inner = ctk.CTkFrame(octet_box, fg_color="transparent")
     inner.pack(padx=12, pady=10)
 
-    vcmd = (parent.winfo_toplevel().register(lambda val: val.isdigit() and len(val) <= 3 or val == ""), "%P")
+    vcmd = (parent.winfo_toplevel().register(lambda val: val.isdecimal() and len(val) <= 3 or val == ""), "%P")
 
     for i in range(4):
         entry = ctk.CTkEntry(inner, width=55, height=36, justify="center", fg_color=COLORS["surface"], border_color=COLORS["border"], validate="key", validatecommand=vcmd)
@@ -161,7 +161,7 @@ def lire_octets(group: list) -> list | None:
     octets = []
     for entry in group:
         val = entry.get().strip()
-        if not val.isdigit() or not (0 <= int(val) <= 255):
+        if not val.isdecimal() or not (0 <= int(val) <= 255):
             return None
         octets.append(str(int(val)).zfill(3))
     return octets
