@@ -85,6 +85,7 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
     app.title("Inscription")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
+    app.minsize(600, 520)
     center_window(app, 600, 520)
 
     def schedule_navigation(callback, *args, **kwargs):

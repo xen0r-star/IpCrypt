@@ -84,6 +84,7 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
     app.title("Changement mot de passe lors de la premiere inscription")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
+    app.minsize(600, 520)
     center_window(app, 600, 520)
 
     def schedule_navigation(callback, *args, **kwargs):

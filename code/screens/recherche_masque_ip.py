@@ -159,6 +159,7 @@ def create_get_mask_ui(on_back=None):
     app.title("Recherche masque IP")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
+    app.minsize(720, 520)
     center_window(app, 720, 520)
 
     def schedule_navigation(callback, *args, **kwargs):

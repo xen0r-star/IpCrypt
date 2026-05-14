@@ -164,6 +164,7 @@ def create_get_network_ui(on_back=None):
     app.title("Définir réseau et sous-réseau")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
+    app.minsize(720, 520)
     center_window(app, 720, 520)
 
     def schedule_navigation(callback, *args, **kwargs):

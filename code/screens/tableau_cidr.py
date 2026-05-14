@@ -150,6 +150,7 @@ def create_cidr_table_ui(on_back=None):
     app.title("Tableau CIDR")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
+    app.minsize(960, 680)
     center_window(app, 960, 680)
 
     def schedule_navigation(callback, *args, **kwargs):
