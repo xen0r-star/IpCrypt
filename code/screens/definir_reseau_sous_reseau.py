@@ -27,13 +27,26 @@ def defAdresseReseau(segment, classe):
     """Retourne l'adresse réseau classful en mettant à zéro les octets hôte selon la classe."""
     match classe:
         case "A":
-            return f"{segment[0]}.0.0.0"
+            return f"{int(segment[0])}.0.0.0"
         case "B":
-            return f"{segment[0]}.{segment[1]}.0.0"
+            return f"{int(segment[0])}.{int(segment[1])}.0.0"
         case "C":
-            return f"{segment[0]}.{segment[1]}.{segment[2]}.0"
+            return f"{int(segment[0])}.{int(segment[1])}.{int(segment[2])}.0"
         case _:
             return "N/A"
+
+
+def valider_masque(masque_segments):
+    """Vérifie si le masque est structurellement valide (suite continue de 1 puis de 0)."""
+    try:
+        # Convertit les 4 octets en une seule chaîne binaire de 32 caractères
+        bits = "".join(bin(int(octet))[2:].zfill(8) for octet in masque_segments)
+        
+        # Un masque valide ne doit JAMAIS avoir de '1' après un '0' (donc pas de séquence "01")
+        # Et il doit obligatoirement commencer par un '1' (le premier bit ne peut pas être 0)
+        return "01" not in bits and bits.startswith("1")
+    except ValueError:
+        return False
 
 
 def defAdresseSousReseau(segment, masque):
@@ -149,7 +162,7 @@ def lire_octets(group: list) -> list | None:
         val = entry.get().strip()
         if not val.isdecimal() or not (0 <= int(val) <= 255):
             return None
-        octets.append(str(int(val)).zfill(3))
+        octets.append(str(int(val)))  # Nettoyé : suppression du .zfill(3) problématique
     return octets
 
 
@@ -226,20 +239,35 @@ def create_get_network_ui(on_back=None):
         result_labels[label_text] = val_label
 
     def on_verify():
-        """Lit IP et masque, calcule l'adresse réseau classful et l'adresse de sous-réseau."""
-        # group_entries[:4] = IP, group_entries[4:] = Masque
+        """Lit IP et masque, applique les validations strictes puis calcule les adresses."""
+        # Réinitialisation visuelle par défaut avant calcul
+        result_labels["Adresse réseau"].configure(text="-", text_color=COLORS["muted"])
+        result_labels["Adresse sous-réseau"].configure(text="-", text_color=COLORS["muted"])
+
         octetsIP     = lire_octets(group_entries[:4])
         octetsMasque = lire_octets(group_entries[4:])
 
-        if octetsIP and octetsMasque:
-            classe = definirClasse(octetsIP[0])
-            adresseReseau = defAdresseReseau(octetsIP, classe)
-            adresseSousReseau = defAdresseSousReseau(octetsIP, octetsMasque)
-            result_labels["Adresse réseau"].configure(text=adresseReseau, text_color=COLORS["primary"])
-            result_labels["Adresse sous-réseau"].configure(text=adresseSousReseau, text_color=COLORS["primary"])
-        else:
-            result_labels["Adresse réseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
-            result_labels["Adresse sous-réseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
+        # 1. Vérification des caractères et de la plage numérique (0-255)
+        if not octetsIP:
+            result_labels["Adresse réseau"].configure(text="IP Invalide (0-255 ou texte détecté)", text_color=COLORS["danger"])
+            return
+
+        if not octetsMasque:
+            result_labels["Adresse sous-réseau"].configure(text="Masque Invalide (0-255 ou texte détecté)", text_color=COLORS["danger"])
+            return
+
+        # 2. Validation de la structure binaire continue du masque de sous-réseau
+        if not valider_masque(octetsMasque):
+            result_labels["Adresse sous-réseau"].configure(text="Masque structurellement invalide", text_color=COLORS["danger"])
+            return
+
+        # 3. Traitement et mise à jour de l'affichage si tout est correct
+        classe = definirClasse(octetsIP[0])
+        adresseReseau = defAdresseReseau(octetsIP, classe)
+        adresseSousReseau = defAdresseSousReseau(octetsIP, octetsMasque)
+        
+        result_labels["Adresse réseau"].configure(text=adresseReseau, text_color=COLORS["primary"])
+        result_labels["Adresse sous-réseau"].configure(text=adresseSousReseau, text_color=COLORS["primary"])
 
     def on_clear():
         """Efface les champs de saisie et réinitialise les labels de résultats."""
