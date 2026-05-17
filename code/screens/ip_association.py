@@ -137,7 +137,7 @@ def lire_octets(group: list) -> list | None:
 
 def est_masque_valide(masque: list) -> bool:
     """verifie que le masque est bien valide en verifiant si c'est bien une suite de 1 puis une suite de 0"""
-    binaire = "".join(bin(int(o))[2:].zfill(8) for o in masque)
+    binaire = "".join("1" if (int(o) >> i) & 1 else "0" for o in masque for i in range(7, -1, -1))
     return "01" not in binaire
 
 

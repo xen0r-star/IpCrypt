@@ -7,9 +7,8 @@ from PIL import Image, ImageTk
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("IpCrypt.NetworkTool.1.0")
 
 BASE = Path(__file__).resolve().parent
-ICO  = BASE / "images" / "menuIpCrypt.ico"
+ICO  = BASE / "images" / "iconeIpCrypt.ico"
 PNG  = BASE / "images" / "menuIpCrypt.png"
-ICO2 = BASE / "images" / "iconeIpCrypt.ico"
 
 
 def show_splash() -> tk.Tk:
@@ -76,22 +75,34 @@ def launch(splash: tk.Tk) -> None:
 
     def on_login_success(username=None, password=None, is_admin=None):
         """Vérifie les identifiants ; redirige vers la première connexion ou le menu selon le flag en base."""
+        print(f"[LOGIN] username={username!r}")
         if not username or not password:
+            print("[LOGIN] champ vide")
             messagebox.showerror("Erreur", "Nom d'utilisateur ou mot de passe manquant")
             return
 
-        user = recuperation_utilisateur_database(username)
+        try:
+            user = recuperation_utilisateur_database(username)
+        except Exception as e:
+            print(f"[LOGIN] EXCEPTION DB: {type(e).__name__}: {e}")
+            messagebox.showerror("Erreur DB", f"{type(e).__name__}: {e}")
+            return
+        print(f"[LOGIN] user={user!r}")
         if user is None:
+            print("[LOGIN] user introuvable en DB")
             messagebox.showerror("Erreur d'authentification", "Nom d'utilisateur ou mot de passe incorrect")
             return
 
         from utils.auth_service import verification_motDePasse
-        if not verification_motDePasse(password, user.get("password", "")):
+        verify_ok = verification_motDePasse(password, user.get("password", ""))
+        print(f"[LOGIN] verify_ok={verify_ok}")
+        if not verify_ok:
             messagebox.showerror("Erreur d'authentification", "Nom d'utilisateur ou mot de passe incorrect")
             return
 
         db_is_admin = bool(user.get("is_admin"))
         is_first_connexion = bool(user.get("is_firstconnexion"))
+        print(f"[LOGIN] is_admin={db_is_admin} is_first={is_first_connexion}")
 
         if is_first_connexion:
             open_first_connexion(username=username, is_admin=db_is_admin)

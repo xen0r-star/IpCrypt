@@ -1,11 +1,13 @@
 import os
+from pathlib import Path
 
 from argon2 import PasswordHasher, Type, exceptions
 from dotenv import load_dotenv
 from psycopg import connect, OperationalError
 from psycopg.rows import dict_row
 
-load_dotenv()
+# .env à la racine du projet (IpCrypt/.env), à deux niveaux au-dessus de ce fichier.
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 # ══════════════════════════════════════════════
 # Logique métier
@@ -39,6 +41,7 @@ def _open_connection():
         sslmode=os.getenv("DB_SSLMODE", "require"),
         row_factory=dict_row,
         autocommit=True,
+        connect_timeout=10,
     )
 
 

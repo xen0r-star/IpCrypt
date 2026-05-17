@@ -40,7 +40,7 @@ def valider_masque(masque_segments):
     """Vérifie si le masque est structurellement valide (suite continue de 1 puis de 0)."""
     try:
         # Convertit les 4 octets en une seule chaîne binaire de 32 caractères
-        bits = "".join(bin(int(octet))[2:].zfill(8) for octet in masque_segments)
+        bits = "".join("1" if (int(octet) >> i) & 1 else "0" for octet in masque_segments for i in range(7, -1, -1))
         
         # Un masque valide ne doit JAMAIS avoir de '1' après un '0' (donc pas de séquence "01")
         # Et il doit obligatoirement commencer par un '1' (le premier bit ne peut pas être 0)
