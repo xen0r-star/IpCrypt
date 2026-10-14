@@ -177,8 +177,8 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
 
     def on_submit_signup():
         """Valide la politique de mot de passe puis transmet les données au callback d'inscription."""
-        username = entryUserNameInscription.get().strip()
-        password = entryPasswordInscription.get().strip()
+        username = entryUserNameInscription.get().strip()[:50]
+        password = entryPasswordInscription.get().strip()[:50]
         profile = profile_var.get().strip()
 
         if not username or not password:

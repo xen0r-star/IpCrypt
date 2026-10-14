@@ -51,20 +51,20 @@ User access is controlled via login (admin / client profiles). Accounts and hash
 
 ## Features
 
-| Module | Status | Description |
-|---|---|---|
-| Splash screen | Done | Animated loading screen on startup |
-| Login | Done | Username + password with policy enforcement |
-| First connection | Done | Forced password change on first login for admin-created accounts |
-| Registration | Done | Admin-only user creation with profile selection |
-| Menu | Done | Role-aware navigation (admin vs client) |
-| Gestion IP | Done | Sub-menu routing to all IP analysis tools |
-| IP Verification | Done | Class detection, broadcast/network/host classification |
-| Recherche classe IP | Done | Class (A–E) + public/private/loopback/APIPA detection |
-| Recherche masque IP | Done | Classful mask from first octet |
-| Réseau et sous-réseau | Done | Network address (classful) + subnet address (AND with mask) |
-| IP Association | Done | Bilateral cross-network visibility check |
-| CIDR Table | Done | /8–/30 matrix with binary + decimal + Excel export |
+| Module                | Status | Description                                                      |
+| --------------------- | ------ | ---------------------------------------------------------------- |
+| Splash screen         | Done   | Animated loading screen on startup                               |
+| Login                 | Done   | Username + password with policy enforcement                      |
+| First connection      | Done   | Forced password change on first login for admin-created accounts |
+| Registration          | Done   | Admin-only user creation with profile selection                  |
+| Menu                  | Done   | Role-aware navigation (admin vs client)                          |
+| Gestion IP            | Done   | Sub-menu routing to all IP analysis tools                        |
+| IP Verification       | Done   | Class detection, broadcast/network/host classification           |
+| Recherche classe IP   | Done   | Class (A–E) + public/private/loopback/APIPA detection            |
+| Recherche masque IP   | Done   | Classful mask from first octet                                   |
+| Réseau et sous-réseau | Done   | Network address (classful) + subnet address (AND with mask)      |
+| IP Association        | Done   | Bilateral cross-network visibility check                         |
+| CIDR Table            | Done   | /8–/30 matrix with binary + decimal + Excel export               |
 
 ---
 
@@ -252,14 +252,14 @@ IpCrypt/
 Python fournit `ipaddress`, `socket`, et d'autres modules qui font tout le travail réseau en une ligne.
 IpCrypt n'en utilise aucun — toutes les opérations sont implémentées à la main :
 
-| Opération | Implémentation |
-|---|---|
-| Détection de classe | Comparaison de plages sur le 1er octet (`1–126` → A, `128–191` → B…) |
-| Masque classful | `match/case` sur la classe détectée |
-| Adresse réseau | ET binaire octet par octet (`IP[i] & masque[i]`) |
-| Adresse broadcast | Remplace les octets hôtes par `255` selon la classe |
-| Table CIDR | Génération des masques par décalage de bits (`0xFFFFFFFF << (32 - prefix)`) |
-| Type d'adresse | Comparaison de plages RFC 1918 (`10.x`, `172.16–31.x`, `192.168.x`) |
+| Opération           | Implémentation                                                              |
+| ------------------- | --------------------------------------------------------------------------- |
+| Détection de classe | Comparaison de plages sur le 1er octet (`1–126` → A, `128–191` → B…)        |
+| Masque classful     | `match/case` sur la classe détectée                                         |
+| Adresse réseau      | ET binaire octet par octet (`IP[i] & masque[i]`)                            |
+| Adresse broadcast   | Remplace les octets hôtes par `255` selon la classe                         |
+| Table CIDR          | Génération des masques par décalage de bits (`0xFFFFFFFF << (32 - prefix)`) |
+| Type d'adresse      | Comparaison de plages RFC 1918 (`10.x`, `172.16–31.x`, `192.168.x`)         |
 
 C'est un choix pédagogique : l'objectif est de comprendre et recoder la logique réseau, pas de déléguer à une lib.
 
@@ -279,13 +279,13 @@ CREATE TABLE users (
 );
 ```
 
-| Colonne | Type | Rôle |
-|---|---|---|
-| `user_id` | BIGSERIAL | Clé primaire auto-incrémentée |
-| `username` | VARCHAR(50) | Identifiant unique de connexion |
-| `password` | TEXT | Hash Argon2id (jamais le mot de passe en clair) |
-| `is_admin` | BOOLEAN | `true` → accès module inscription + toutes fonctions |
-| `is_firstConnexion` | BOOLEAN | `true` → forçage changement de mot de passe au prochain login |
+| Colonne             | Type        | Rôle                                                          |
+| ------------------- | ----------- | ------------------------------------------------------------- |
+| `user_id`           | BIGSERIAL   | Clé primaire auto-incrémentée                                 |
+| `username`          | VARCHAR(50) | Identifiant unique de connexion                               |
+| `password`          | TEXT        | Hash Argon2id (jamais le mot de passe en clair)               |
+| `is_admin`          | BOOLEAN     | `true` → accès module inscription + toutes fonctions          |
+| `is_firstConnexion` | BOOLEAN     | `true` → forçage changement de mot de passe au prochain login |
 
 ---
 
@@ -412,13 +412,13 @@ python main.py
 
 Enforced at registration and first connection via `utils/auth_policy.py`:
 
-| Rule | Value |
-|---|---|
-| Minimum length | 12 characters |
-| Minimum lowercase | 1 |
-| Minimum uppercase | 2 |
-| Minimum digits | 1 |
-| Minimum special chars | 1 |
+| Rule                  | Value         |
+| --------------------- | ------------- |
+| Minimum length        | 12 characters |
+| Minimum lowercase     | 1             |
+| Minimum uppercase     | 2             |
+| Minimum digits        | 1             |
+| Minimum special chars | 1             |
 
 The validator is parametric — thresholds can be adjusted per call site. Policy is **not** checked at login (only at password creation/change).
 
