@@ -190,7 +190,7 @@ def launch(splash: tk.Tk) -> None:
         )
 
     def open_ip_association():          create_ip_association_ui(on_back=open_menu, user_id=current_user_id)
-    def open_cidr_table():              create_cidr_table_ui(on_back=open_menu, user_id=current_user_id)
+    def open_cidr_table():              create_cidr_table_ui(on_back=open_menu)
     def open_subnet_verification():     create_ip_verification_ui(on_back=open_ip_menu, user_id=current_user_id)
     def open_definer_classe():          create_definer_class_ui(on_back=open_ip_menu, user_id=current_user_id)
     def open_get_mask():                create_get_mask_ui(on_back=open_ip_menu, user_id=current_user_id)

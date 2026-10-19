@@ -252,7 +252,7 @@ def create_ip_association_ui(on_back=None, user_id=None):
             result_label.configure(text="Erreur : le masque 2 est invalide", text_color=COLORS["error"])
             return
 
-        # Fonctionnalité 6 : on stocke les 2 couples IP/masque (pas le verdict) et le dernier modificateur.
+        # Fonctionnalité 5 : on stocke les 2 couples IP/masque (pas le verdict) et le dernier modificateur.
         if not enregistrer_meme_reseau(ip_en_texte(ip1), ip_en_texte(masque1), ip_en_texte(ip2), ip_en_texte(masque2), user_id):
             messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
 

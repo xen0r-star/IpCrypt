@@ -2,7 +2,7 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
-from utils.data_service import enregistrer_verification_ip, ip_en_texte
+from utils.data_service import enregistrer_masque_classe_ip, ip_en_texte
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -228,7 +228,7 @@ def create_get_mask_ui(on_back=None, user_id=None):
         if octets:
             classe = definirClasse(octets[0])
             masque = definirMasque(classe)
-            if not enregistrer_verification_ip("ip_class_mask_checks", ip_en_texte(octets), user_id):
+            if not enregistrer_masque_classe_ip(ip_en_texte(octets), user_id):  # Fonctionnalité 3
                 messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
             result_labels["Masque du réseau"].configure(text=masque, text_color=COLORS["primary"])
         else:

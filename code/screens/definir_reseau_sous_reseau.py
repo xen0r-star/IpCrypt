@@ -263,7 +263,7 @@ def create_get_network_ui(on_back=None, user_id=None):
             result_labels["Adresse sous-réseau"].configure(text="Masque structurellement invalide", text_color=COLORS["danger"])
             return
 
-        # Fonctionnalité 5 : on stocke IP + masque (pas les résultats) et le dernier modificateur.
+        # Fonctionnalité 4 : on stocke IP + masque (pas les résultats).
         if not enregistrer_reseau(ip_en_texte(octetsIP), ip_en_texte(octetsMasque), user_id):
             messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
 

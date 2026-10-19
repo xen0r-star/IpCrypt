@@ -4,8 +4,6 @@ import customtkinter as ctk
 from tkinter import filedialog, messagebox, ttk
 from pathlib import Path
 
-from utils.data_service import sauvegarder_masques
-
 try:
     import pandas as pd
     _PANDAS_AVAILABLE = True
@@ -143,7 +141,7 @@ def cleanup_window(window: ctk.CTk) -> None:
         pass
 
 
-def create_cidr_table_ui(on_back=None, user_id=None):
+def create_cidr_table_ui(on_back=None):
     """Fenêtre Tableau CIDR : affiche la matrice des masques /8 à /30 et permet l'export Excel ou CSV."""
     app = ctk.CTk()
     if ICO.exists():
@@ -240,9 +238,6 @@ def create_cidr_table_ui(on_back=None, user_id=None):
     tree_container.grid_rowconfigure(0, weight=1)
 
     cidr_rows = build_cidr_rows()
-    # Fonctionnalité 1 : le résultat (masques /8 à /30) est stocké en base.
-    if not sauvegarder_masques(cidr_rows, user_id):
-        messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
     for row in cidr_rows:
         tree.insert("", "end", values=row)
 
