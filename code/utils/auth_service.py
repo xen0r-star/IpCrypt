@@ -66,10 +66,10 @@ def _run(op):
 
 
 def recuperation_motDePasse_database(username):
-    """Retourne la ligne utilisateur (username, password, is_admin, is_firstconnexion) ou None si inexistant."""
+    """Retourne la ligne utilisateur (user_id, username, password, is_admin, is_firstconnexion) ou None si inexistant."""
     def op(cur):
         cur.execute(
-            "SELECT username, password, is_admin, is_firstconnexion FROM users WHERE username=%s",
+            "SELECT user_id, username, password, is_admin, is_firstconnexion FROM users WHERE username=%s",
             (username,),
         )
         return cur.fetchone()
@@ -81,25 +81,45 @@ def recuperation_utilisateur_database(username):
     return recuperation_motDePasse_database(username)
 
 
-def inscription_dans_database(username: str, profilUser: str, passwordHashed: str) -> bool:
-    """Insère un nouvel utilisateur en base. Lève UniqueViolation si le nom d'utilisateur est déjà pris."""
+def ecrire_audit(cur, table_name: str, operation: str, record_id, user_id: int, details: str = None) -> None:
+    """Ajoute une ligne au journal audit_log (tag = numéro d'employé). À appeler dans la même transaction que la modification."""
+    if user_id is None:
+        raise ValueError("Le numéro d'employé est obligatoire pour tagger une modification.")
+    cur.execute(
+        "INSERT INTO audit_log (table_name, operation, record_id, user_id, details) VALUES (%s, %s, %s, %s, %s)",
+        (table_name, operation, str(record_id), user_id, details),
+    )
+
+
+def inscription_dans_database(username: str, profilUser: str, passwordHashed: str, acteur_id: int) -> bool:
+    """Insère un nouvel utilisateur et tague l'opération avec l'admin qui l'a créé. Lève UniqueViolation si le nom est pris."""
     def op(cur):
-        cur.execute(
-            "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s)",
-            (username, passwordHashed, profilUser == "Admin"),
-        )
+        with cur.connection.transaction():
+            cur.execute(
+                "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s) RETURNING user_id",
+                (username, passwordHashed, profilUser == "Admin"),
+            )
+            nouveau_id = cur.fetchone()["user_id"]
+            ecrire_audit(cur, "users", "INSERT", nouveau_id, acteur_id,
+                         f"Création du compte '{username}' (profil {profilUser})")
         return True
     return _run(op)
 
 
 def update_motDePasse_premiere_connexion_database(username: str, passwordHashed: str) -> bool:
-    """Met à jour le mot de passe et bascule is_firstconnexion à FALSE. Retourne False si l'utilisateur est introuvable."""
+    """Met à jour le mot de passe, bascule is_firstconnexion à FALSE et tague l'opération. Retourne False si introuvable."""
     def op(cur):
-        cur.execute(
-            "UPDATE users SET password=%s, is_firstconnexion=FALSE WHERE username=%s",
-            (passwordHashed, username),
-        )
-        return cur.rowcount == 1
+        with cur.connection.transaction():
+            cur.execute(
+                "UPDATE users SET password=%s, is_firstconnexion=FALSE WHERE username=%s RETURNING user_id",
+                (passwordHashed, username),
+            )
+            ligne = cur.fetchone()
+            if ligne is None:
+                return False
+            ecrire_audit(cur, "users", "UPDATE", ligne["user_id"], ligne["user_id"],
+                         "Changement du mot de passe (première connexion)")
+            return True
     return _run(op)
 
 
@@ -117,7 +137,7 @@ def verification_motDePasse(passwordToVerify: str, passwordHashed: str) -> bool:
         return False
 
 
-def hashage_motDePasse(motDePasseEnClaire: str, source: str, username: str, profilUser: str = None) -> bool:
+def hashage_motDePasse(motDePasseEnClaire: str, source: str, username: str, profilUser: str = None, acteur_id: int = None) -> bool:
     """
     Point d'entrée unique pour toutes les opérations sur les mots de passe.
       - connexion_ui       : vérifie le mot de passe contre le hash stocké.
@@ -135,7 +155,7 @@ def hashage_motDePasse(motDePasseEnClaire: str, source: str, username: str, prof
 
         elif source == "inscription_ui":
             motDePasseHashe = pwdHasher.hash(motDePasseEnClaire)
-            return inscription_dans_database(username, profilUser, motDePasseHashe)
+            return inscription_dans_database(username, profilUser, motDePasseHashe, acteur_id)
 
         elif source == "first_connexion_ui":
             motDePasseHashe = pwdHasher.hash(motDePasseEnClaire)

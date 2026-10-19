@@ -1,6 +1,8 @@
+from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
+from utils.data_service import enregistrer_meme_reseau, ip_en_texte
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 ctk.set_appearance_mode("light")
@@ -164,7 +166,7 @@ def caracteriser_adresse(ip: list, masque: list) -> str | None:
     return None
 
 
-def create_ip_association_ui(on_back=None):
+def create_ip_association_ui(on_back=None, user_id=None):
     """Fenêtre IP Association : compare deux adresses IP/masques et détermine leur visibilité réciproque."""
     app = ctk.CTk()
     if ICO.exists():
@@ -201,7 +203,7 @@ def create_ip_association_ui(on_back=None):
     result_label = ctk.CTkLabel(result_frame, text="", font=("Segoe UI", 14), text_color=COLORS["muted"], justify="left", wraplength=860)
     result_label.pack(anchor="w", padx=16, pady=14)
 
-    card = ctk.CTkFrame(container, fg_color=COLORS["surface"], border_width=1, border_color=COLORS["border"], corner_radius=14)
+    card = ctk.CTkScrollableFrame(container, fg_color=COLORS["surface"], border_width=1, border_color=COLORS["border"], corner_radius=14)
     card.pack(fill="both", expand=True)
 
     section_1 = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
@@ -249,6 +251,10 @@ def create_ip_association_ui(on_back=None):
         if not est_masque_valide(masque2):
             result_label.configure(text="Erreur : le masque 2 est invalide", text_color=COLORS["error"])
             return
+
+        # Fonctionnalité 6 : on stocke les 2 couples IP/masque (pas le verdict) et le dernier modificateur.
+        if not enregistrer_meme_reseau(ip_en_texte(ip1), ip_en_texte(masque1), ip_en_texte(ip2), ip_en_texte(masque2), user_id):
+            messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
 
         reseau1, reseau2, verdict, meme_reseau = calcule_adresse_reseau(ip1, masque1, ip2, masque2)
 

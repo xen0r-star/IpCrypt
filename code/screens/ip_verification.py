@@ -1,6 +1,8 @@
+from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
+from utils.data_service import enregistrer_verification_ip
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -167,7 +169,7 @@ def lire_octets(group: list) -> list | None:
     return octets
 
 
-def create_ip_verification_ui(on_back=None):
+def create_ip_verification_ui(on_back=None, user_id=None):
     """Fenêtre IP Vérification : détermine si une adresse est réseau, broadcast ou hôte selon sa classe."""
     group_entries.clear()
     result_labels.clear()
@@ -238,6 +240,16 @@ def create_ip_verification_ui(on_back=None):
 
     def on_verify():
         """Lit les octets, détermine la classe puis affiche le résultat de vérification."""
+        # Fonctionnalité 2 : l'entrée brute est stockée même si elle est invalide (le résultat n'est pas gardé).
+        octets_bruts = []
+        for entry in group_entries:
+            octets_bruts.append(entry.get().strip())
+        ip_brute = ".".join(octets_bruts)
+        
+        if ip_brute.strip("."):
+            if not enregistrer_verification_ip("ip_format_checks", ip_brute, user_id):
+                messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
+
         octets = lire_octets(group_entries)
         if octets:
             classe = definirClasse(octets[0])

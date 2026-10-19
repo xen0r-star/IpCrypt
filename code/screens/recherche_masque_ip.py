@@ -1,6 +1,8 @@
+from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
+from utils.data_service import enregistrer_verification_ip, ip_en_texte
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -148,7 +150,7 @@ def lire_octets(group: list) -> list | None:
     return octets
 
 
-def create_get_mask_ui(on_back=None):
+def create_get_mask_ui(on_back=None, user_id=None):
     """Fenêtre Recherche masque IP : affiche le masque classful correspondant à l'adresse saisie."""
     group_entries.clear()
     result_labels.clear()
@@ -226,6 +228,8 @@ def create_get_mask_ui(on_back=None):
         if octets:
             classe = definirClasse(octets[0])
             masque = definirMasque(classe)
+            if not enregistrer_verification_ip("ip_class_mask_checks", ip_en_texte(octets), user_id):
+                messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
             result_labels["Masque du réseau"].configure(text=masque, text_color=COLORS["primary"])
         else:
             result_labels["Masque du réseau"].configure(text="IP Invalide", text_color=COLORS["danger"])

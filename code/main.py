@@ -72,6 +72,7 @@ def launch(splash: tk.Tk) -> None:
     splash.destroy()
 
     current_is_admin = False
+    current_user_id = None  # numéro d'employé de la session
 
     def on_login_success(username=None, password=None, is_admin=None):
         """Vérifie les identifiants ; redirige vers la première connexion ou le menu selon le flag en base."""
@@ -104,12 +105,14 @@ def launch(splash: tk.Tk) -> None:
         is_first_connexion = bool(user.get("is_firstconnexion"))
         print(f"[LOGIN] is_admin={db_is_admin} is_first={is_first_connexion}")
 
-        if is_first_connexion:
-            open_first_connexion(username=username, is_admin=db_is_admin)
-        else:
-            open_menu(is_admin=db_is_admin, username=username)
+        db_user_id = user.get("user_id")
 
-    def on_first_connexion_success(username=None, new_password=None, is_admin=False):
+        if is_first_connexion:
+            open_first_connexion(username=username, is_admin=db_is_admin, user_id=db_user_id)
+        else:
+            open_menu(is_admin=db_is_admin, username=username, user_id=db_user_id)
+
+    def on_first_connexion_success(username=None, new_password=None, is_admin=False, user_id=None):
         """Met à jour le mot de passe en base puis ouvre le menu."""
         if not username or not new_password:
             messagebox.showerror("Erreur", "Donnees de changement de mot de passe incompletes")
@@ -117,7 +120,7 @@ def launch(splash: tk.Tk) -> None:
 
         if hashage_motDePasse(new_password, "first_connexion_ui", username):
             messagebox.showinfo("Succes", "Mot de passe modifie avec succes.")
-            open_menu(is_admin=is_admin, username=username)
+            open_menu(is_admin=is_admin, username=username, user_id=user_id)
         else:
             messagebox.showerror("Erreur", "Impossible de modifier le mot de passe.")
 
@@ -138,7 +141,7 @@ def launch(splash: tk.Tk) -> None:
             if not username or not password or not profile:
                 messagebox.showerror("Erreur", "Données d'inscription incomplètes")
                 return
-            if hashage_motDePasse(password, "inscription_ui", username, profile):
+            if hashage_motDePasse(password, "inscription_ui", username, profile, acteur_id=current_user_id):
                 messagebox.showinfo("Succès", "Compte créé avec succès!")
                 open_inscription(from_menu=from_menu)
             else:
@@ -146,7 +149,7 @@ def launch(splash: tk.Tk) -> None:
 
         create_inscription_ui(on_signup_success=after_signup, on_back=back_callback, back_button_text=back_text)
 
-    def open_first_connexion(username: str, is_admin: bool):
+    def open_first_connexion(username: str, is_admin: bool, user_id=None):
         """Ouvre l'écran de changement de mot de passe obligatoire pour les nouveaux comptes."""
         create_first_connection_ui(
             username=username,
@@ -154,16 +157,19 @@ def launch(splash: tk.Tk) -> None:
                 username=username,
                 new_password=new_password,
                 is_admin=is_admin,
+                user_id=user_id,
             ),
             on_back=open_connexion,
             back_button_text="Annuler",
         )
 
-    def open_menu(is_admin=None, username=None):
-        """Ouvre le menu principal en mémorisant le rôle admin pour la session en cours."""
-        nonlocal current_is_admin
+    def open_menu(is_admin=None, username=None, user_id=None):
+        """Ouvre le menu principal en mémorisant le rôle admin et le numéro d'employé pour la session en cours."""
+        nonlocal current_is_admin, current_user_id
         if is_admin is not None:
             current_is_admin = is_admin
+        if user_id is not None:
+            current_user_id = user_id
         create_menu_ui(
             on_open_menu_IP=open_ip_menu,
             on_open_ip_association=open_ip_association,
@@ -183,12 +189,12 @@ def launch(splash: tk.Tk) -> None:
             on_back=open_menu,
         )
 
-    def open_ip_association():          create_ip_association_ui(on_back=open_menu)
-    def open_cidr_table():              create_cidr_table_ui(on_back=open_menu)
-    def open_subnet_verification():     create_ip_verification_ui(on_back=open_ip_menu)
-    def open_definer_classe():          create_definer_class_ui(on_back=open_ip_menu)
-    def open_get_mask():                create_get_mask_ui(on_back=open_ip_menu)
-    def open_get_network():             create_get_network_ui(on_back=open_ip_menu)
+    def open_ip_association():          create_ip_association_ui(on_back=open_menu, user_id=current_user_id)
+    def open_cidr_table():              create_cidr_table_ui(on_back=open_menu, user_id=current_user_id)
+    def open_subnet_verification():     create_ip_verification_ui(on_back=open_ip_menu, user_id=current_user_id)
+    def open_definer_classe():          create_definer_class_ui(on_back=open_ip_menu, user_id=current_user_id)
+    def open_get_mask():                create_get_mask_ui(on_back=open_ip_menu, user_id=current_user_id)
+    def open_get_network():             create_get_network_ui(on_back=open_ip_menu, user_id=current_user_id)
 
     open_connexion()
 

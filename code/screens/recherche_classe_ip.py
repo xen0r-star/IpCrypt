@@ -1,6 +1,8 @@
+from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
+from utils.data_service import enregistrer_verification_ip, ip_en_texte
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -148,7 +150,7 @@ def lire_octets(group: list) -> list | None:
     return octets
 
 
-def create_definer_class_ui(on_back=None):
+def create_definer_class_ui(on_back=None, user_id=None):
     """Fenêtre Recherche classe IP : affiche la classe et le type (privé/public/réservé) d'une adresse IP."""
     group_entries.clear()
     result_labels.clear()
@@ -226,6 +228,8 @@ def create_definer_class_ui(on_back=None):
         if octets:
             classe = definirClasse(octets[0])
             typeAdresse = definirTypeIP(octets)
+            if not enregistrer_verification_ip("ip_class_checks", ip_en_texte(octets), user_id):
+                messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
             result_labels["Classe du réseau"].configure(text=classe, text_color=COLORS["primary"])
             result_labels["Type d'adresse"].configure(text=typeAdresse, text_color=COLORS["primary"])
         else:

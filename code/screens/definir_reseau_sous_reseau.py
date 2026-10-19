@@ -1,6 +1,8 @@
+from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
+from utils.data_service import enregistrer_reseau, ip_en_texte
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -166,7 +168,7 @@ def lire_octets(group: list) -> list | None:
     return octets
 
 
-def create_get_network_ui(on_back=None):
+def create_get_network_ui(on_back=None, user_id=None):
     """Fenêtre Définir réseau et sous-réseau : calcule l'adresse réseau classful et l'adresse de sous-réseau par masque personnalisé."""
     group_entries.clear()
     result_labels.clear()
@@ -260,6 +262,10 @@ def create_get_network_ui(on_back=None):
         if not valider_masque(octetsMasque):
             result_labels["Adresse sous-réseau"].configure(text="Masque structurellement invalide", text_color=COLORS["danger"])
             return
+
+        # Fonctionnalité 5 : on stocke IP + masque (pas les résultats) et le dernier modificateur.
+        if not enregistrer_reseau(ip_en_texte(octetsIP), ip_en_texte(octetsMasque), user_id):
+            messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
 
         # 3. Traitement et mise à jour de l'affichage si tout est correct
         classe = definirClasse(octetsIP[0])
