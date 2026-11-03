@@ -1,13 +1,15 @@
 from utils.auth_service import _run, ecrire_audit
 
 # ══════════════════════════════════════════════
-# F1 : format d'une IP         -> ip_format_checks      (entrée + RÉSULTAT)
-# F2 : classe d'une IP         -> ip_class_checks       (entrée)
-# F3 : masque de classe        -> ip_class_mask_checks  (entrée)
-# F4 : réseau / sous-réseau    -> network_calculations  (entrées)
-# F5 : même réseau ?           -> same_network_checks   (entrées + dernier modificateur)
-# F6 : découpe en sous-réseaux -> subnet_splits         (entrées + dernier modificateur)
+# F1 : format d'une IP          -> ip_format_checks      (entrée + RÉSULTAT du contrôle)
+# F2 : classe d'une IP          -> ip_class_checks       (entrée)
+# F3 : masque de classe         -> ip_class_mask_checks  (entrée)
+# F4 : réseau / sous-réseau     -> network_calculations  (entrées)
+# F5 : même réseau ?            -> same_network_checks   (entrées + dernier modificateur)
+# F6 : découpe en sous-réseaux  -> subnet_splits         (entrées + dernier modificateur)
 # ══════════════════════════════════════════════
+
+LIMITE_HISTORIQUE = 100  # nombre maximum de lignes renvoyées aux écrans pour l'historique
 
 
 def ip_en_texte(octets: list) -> str:
@@ -15,165 +17,199 @@ def ip_en_texte(octets: list) -> str:
     return ".".join(str(int(o)) for o in octets)
 
 
-def enregistrer_format_ip(ip: str, est_valide: bool, user_id: int) -> bool:
+# ══════════════════════════════════════════════
+# Outils internes
+# ══════════════════════════════════════════════
+
+def _executer(nom: str, op) -> bool:
+    """Exécute op(cur) via _run ; retourne False (et log console) en cas d'erreur."""
+    try:
+        _run(op)
+        return True
+    except Exception as e:
+        print(f"[DB] {nom} ERREUR {type(e).__name__}: {e}")
+        return False
+
+
+def _lister(nom: str, requete: str) -> list:
+    """Exécute une requête de lecture ; retourne [] (et log console) en cas d'erreur."""
+    def op(cur):
+        cur.execute(requete)
+        return cur.fetchall()
+    try:
+        return _run(op)
+    except Exception as e:
+        print(f"[DB] {nom} ERREUR {type(e).__name__}: {e}")
+        return []
+
+
+def _enregistrer(cur, table: str, col_id: str, valeurs: dict, user_id: int,
+                 record_id=None, avec_modificateur: bool = False) -> None:
+    """
+    Règle commune à toutes les fonctionnalités (à appeler dans une transaction). table/col_id/colonnes sont des
+    constantes du code (jamais une saisie utilisateur), seules les valeurs passent en paramètres SQL.
+
+      - record_id fourni (enregistrement rechargé depuis l'historique) et valeurs changées -> UPDATE de cet enregistrement.
+      - valeurs déjà présentes en base -> pas de doublon : on ne fait que mettre à jour le dernier modificateur
+        (uniquement pour les tables qui en ont un).
+      - sinon -> INSERT.
+    Chaque INSERT/UPDATE est tagué dans audit_log avec le numéro d'employé.
+    """
+    colonnes = list(valeurs)
+    condition = " AND ".join(f"{c}=%s" for c in colonnes)
+    params = tuple(valeurs[c] for c in colonnes)
+    details = ", ".join(f"{c}={valeurs[c]}" for c in colonnes)
+
+    cur.execute(f"SELECT {col_id} FROM {table} WHERE {condition}", params)
+    identique = cur.fetchone()
+
+    # 1) Modification d'un enregistrement rechargé depuis l'historique
+    if record_id is not None and identique is None:
+        cur.execute(f"SELECT {', '.join(colonnes)} FROM {table} WHERE {col_id}=%s", (record_id,))
+        ancien = cur.fetchone()
+        if ancien is not None:
+            affectations = ", ".join(f"{c}=%s" for c in colonnes)
+            params_maj = params
+            if avec_modificateur:
+                affectations += ", last_modified_by=%s, last_modified_at=NOW()"
+                params_maj = params_maj + (user_id,)
+            cur.execute(f"UPDATE {table} SET {affectations} WHERE {col_id}=%s", params_maj + (record_id,))
+            avant = ", ".join(f"{c}={ancien[c]}" for c in colonnes)
+            ecrire_audit(cur, table, "UPDATE", record_id, user_id, f"avant : {avant} -> après : {details}")
+            return
+        # l'enregistrement n'existe plus (supprimé entre-temps) : on retombe sur un INSERT
+
+    # 2) Valeurs déjà connues : pas de doublon
+    if identique is not None:
+        if avec_modificateur:
+            cur.execute(
+                f"UPDATE {table} SET last_modified_by=%s, last_modified_at=NOW() WHERE {col_id}=%s",
+                (user_id, identique[col_id]),
+            )
+            ecrire_audit(cur, table, "UPDATE", identique[col_id], user_id, details)
+        return  # sans modificateur : rien n'a changé, rien à tagger
+
+    # 3) Nouvel enregistrement
+    colonnes_insert = colonnes + (["last_modified_by"] if avec_modificateur else [])
+    params_insert = params + ((user_id,) if avec_modificateur else ())
+    marqueurs = ", ".join(["%s"] * len(colonnes_insert))
+    cur.execute(
+        f"INSERT INTO {table} ({', '.join(colonnes_insert)}) VALUES ({marqueurs}) RETURNING {col_id}",
+        params_insert,
+    )
+    nouveau_id = cur.fetchone()[col_id]
+    ecrire_audit(cur, table, "INSERT", nouveau_id, user_id, details)
+
+
+# ══════════════════════════════════════════════
+# F1 à F4 : entrées (F1 : + résultat)
+# ══════════════════════════════════════════════
+
+def enregistrer_format_ip(ip: str, est_valide: bool, user_id: int, record_id=None) -> bool:
     """Fonctionnalité 1 : stocke l'IP saisie (brute, même invalide) ET le résultat du contrôle de format."""
     def op(cur):
         with cur.connection.transaction():
-            cur.execute("SELECT check_id FROM ip_format_checks WHERE ip=%s AND is_valid=%s", (ip, est_valide))
-            if cur.fetchone():
-                return  # déjà enregistré : rien à modifier, rien à tagger
-            
-            cur.execute(
-                "INSERT INTO ip_format_checks (ip, is_valid) VALUES (%s, %s) RETURNING check_id",
-                (ip, est_valide),
-            )
-            nouveau_id = cur.fetchone()["check_id"]
-            ecrire_audit(cur, "ip_format_checks", "INSERT", nouveau_id, user_id, f"ip={ip}, is_valid={est_valide}")
-
-    try:
-        _run(op)
-        return True
-    except Exception as e:
-        print(f"[DB] enregistrer_format_ip ERREUR {type(e).__name__}: {e}")
-        return False
+            _enregistrer(cur, "ip_format_checks", "check_id", {"ip": ip, "is_valid": est_valide}, user_id, record_id)
+    return _executer("enregistrer_format_ip", op)
 
 
-def enregistrer_classe_ip(ip: str, user_id: int) -> bool:
+def enregistrer_classe_ip(ip: str, user_id: int, record_id=None) -> bool:
     """Fonctionnalité 2 : stocke uniquement l'IP saisie (le résultat se recalcule)."""
     def op(cur):
         with cur.connection.transaction():
-            cur.execute("SELECT check_id FROM ip_class_checks WHERE ip=%s", (ip,))
-            if cur.fetchone():
-                return
-            
-            cur.execute("INSERT INTO ip_class_checks (ip) VALUES (%s) RETURNING check_id", (ip,))
-            nouveau_id = cur.fetchone()["check_id"]
-            ecrire_audit(cur, "ip_class_checks", "INSERT", nouveau_id, user_id, f"ip={ip}")
-
-    try:
-        _run(op)
-        return True
-    except Exception as e:
-        print(f"[DB] enregistrer_classe_ip ERREUR {type(e).__name__}: {e}")
-        return False
+            _enregistrer(cur, "ip_class_checks", "check_id", {"ip": ip}, user_id, record_id)
+    return _executer("enregistrer_classe_ip", op)
 
 
-def enregistrer_masque_classe_ip(ip: str, user_id: int) -> bool:
+def enregistrer_masque_classe_ip(ip: str, user_id: int, record_id=None) -> bool:
     """Fonctionnalité 3 : stocke uniquement l'IP saisie (le résultat se recalcule)."""
     def op(cur):
         with cur.connection.transaction():
-            cur.execute("SELECT check_id FROM ip_class_mask_checks WHERE ip=%s", (ip,))
-            if cur.fetchone():
-                return
-            
-            cur.execute("INSERT INTO ip_class_mask_checks (ip) VALUES (%s) RETURNING check_id", (ip,))
-            nouveau_id = cur.fetchone()["check_id"]
-            ecrire_audit(cur, "ip_class_mask_checks", "INSERT", nouveau_id, user_id, f"ip={ip}")
-
-    try:
-        _run(op)
-        return True
-    except Exception as e:
-        print(f"[DB] enregistrer_masque_classe_ip ERREUR {type(e).__name__}: {e}")
-        return False
+            _enregistrer(cur, "ip_class_mask_checks", "check_id", {"ip": ip}, user_id, record_id)
+    return _executer("enregistrer_masque_classe_ip", op)
 
 
-def enregistrer_reseau(ip: str, masque: str, user_id: int) -> bool:
-    """Fonctionnalité 4 : stocke uniquement IP + masque (pas de dernier modificateur pour cette fonctionnalité)."""
+# ══════════════════════════════════════════════
+# F4 : entrées ; F5 et F6 : entrées + dernier modificateur
+# ══════════════════════════════════════════════
+
+def enregistrer_reseau(ip: str, masque: str, user_id: int, record_id=None) -> bool:
+    """Fonctionnalité 4 : stocke IP + masque (pas les résultats). Pas de dernier modificateur pour cette fonctionnalité."""
     def op(cur):
         with cur.connection.transaction():
-            cur.execute(
-                "SELECT calc_id FROM network_calculations WHERE ip_address=%s AND subnet_mask=%s",
-                (ip, masque),
-            )
-            if cur.fetchone():
-                return
-            
-            cur.execute(
-                "INSERT INTO network_calculations (ip_address, subnet_mask) VALUES (%s, %s) RETURNING calc_id",
-                (ip, masque),
-            )
-            nouveau_id = cur.fetchone()["calc_id"]
-            ecrire_audit(cur, "network_calculations", "INSERT", nouveau_id, user_id, f"ip={ip}, masque={masque}")
-
-    try:
-        _run(op)
-        return True
-    except Exception as e:
-        print(f"[DB] enregistrer_reseau ERREUR {type(e).__name__}: {e}")
-        return False
+            _enregistrer(cur, "network_calculations", "calc_id",
+                         {"ip_address": ip, "subnet_mask": masque}, user_id, record_id)
+    return _executer("enregistrer_reseau", op)
 
 
-def enregistrer_meme_reseau(ip1: str, mask1: str, ip2: str, mask2: str, user_id: int) -> bool:
+def enregistrer_meme_reseau(ip1: str, mask1: str, ip2: str, mask2: str, user_id: int, record_id=None) -> bool:
     """
     Fonctionnalité 5 : stocke les deux couples IP/masque et le dernier modificateur.
     Si ces valeurs existent déjà, seul le dernier modificateur est mis à jour.
     """
     def op(cur):
-        details = f"ip1={ip1}, mask1={mask1}, ip2={ip2}, mask2={mask2}"
         with cur.connection.transaction():
-            cur.execute(
-                "SELECT check_id FROM same_network_checks WHERE ip1=%s AND mask1=%s AND ip2=%s AND mask2=%s",
-                (ip1, mask1, ip2, mask2),
-            )
-
-            ligne = cur.fetchone()
-            if ligne:
-                cur.execute(
-                    "UPDATE same_network_checks SET last_modified_by=%s, last_modified_at=NOW() WHERE check_id=%s",
-                    (user_id, ligne["check_id"]),
-                )
-                ecrire_audit(cur, "same_network_checks", "UPDATE", ligne["check_id"], user_id, details)
-            else:
-                cur.execute(
-                    "INSERT INTO same_network_checks (ip1, mask1, ip2, mask2, last_modified_by) "
-                    "VALUES (%s, %s, %s, %s, %s) RETURNING check_id",
-                    (ip1, mask1, ip2, mask2, user_id),
-                )
-                nouveau_id = cur.fetchone()["check_id"]
-                ecrire_audit(cur, "same_network_checks", "INSERT", nouveau_id, user_id, details)
-
-    try:
-        _run(op)
-        return True
-    except Exception as e:
-        print(f"[DB] enregistrer_meme_reseau ERREUR {type(e).__name__}: {e}")
-        return False
+            _enregistrer(cur, "same_network_checks", "check_id",
+                         {"ip1": ip1, "mask1": mask1, "ip2": ip2, "mask2": mask2},
+                         user_id, record_id, avec_modificateur=True)
+    return _executer("enregistrer_meme_reseau", op)
 
 
-def enregistrer_decoupe_sous_reseaux(adresse_reseau: str, cidr_base: int, nb_sous_reseaux: int, user_id: int) -> bool:
+def enregistrer_decoupe_sous_reseaux(adresse_reseau: str, cidr_base: int, nb_sous_reseaux: int, user_id: int, record_id=None) -> bool:
     """
-    Fonctionnalité 6 : stocke uniquement les entrées de la découpe et le dernier modificateur.
+    Fonctionnalité 6 (découpe en sous-réseaux) : stocke uniquement les entrées de la découpe et le dernier modificateur.
     Si ces valeurs existent déjà, seul le dernier modificateur est mis à jour.
     """
     def op(cur):
-        details = f"reseau={adresse_reseau}, cidr={cidr_base}, sous_reseaux={nb_sous_reseaux}"
         with cur.connection.transaction():
-            cur.execute(
-                "SELECT split_id FROM subnet_splits "
-                "WHERE network_address=%s AND base_cidr=%s AND requested_subnets=%s",
-                (adresse_reseau, cidr_base, nb_sous_reseaux),
-            )
-            
-            ligne = cur.fetchone()
-            if ligne:
-                cur.execute(
-                    "UPDATE subnet_splits SET last_modified_by=%s, last_modified_at=NOW() WHERE split_id=%s",
-                    (user_id, ligne["split_id"]),
-                )
-                ecrire_audit(cur, "subnet_splits", "UPDATE", ligne["split_id"], user_id, details)
-            else:
-                cur.execute(
-                    "INSERT INTO subnet_splits (network_address, base_cidr, requested_subnets, last_modified_by) "
-                    "VALUES (%s, %s, %s, %s) RETURNING split_id",
-                    (adresse_reseau, cidr_base, nb_sous_reseaux, user_id),
-                )
-                nouveau_id = cur.fetchone()["split_id"]
-                ecrire_audit(cur, "subnet_splits", "INSERT", nouveau_id, user_id, details)
+            _enregistrer(cur, "subnet_splits", "split_id",
+                         {"network_address": adresse_reseau, "base_cidr": cidr_base, "requested_subnets": nb_sous_reseaux},
+                         user_id, record_id, avec_modificateur=True)
+    return _executer("enregistrer_decoupe_sous_reseaux", op)
 
-    try:
-        _run(op)
-        return True
-    except Exception as e:
-        print(f"[DB] enregistrer_decoupe_sous_reseaux ERREUR {type(e).__name__}: {e}")
-        return False
+
+# ══════════════════════════════════════════════
+# Lecture : historique affiché par les écrans (chaque ligne contient une clé 'id')
+# ══════════════════════════════════════════════
+
+def lister_formats_ip() -> list:
+    """F1 : [{'id', 'ip', 'resultat'}, ...] du plus récent au plus ancien."""
+    return _lister("lister_formats_ip",
+                   "SELECT check_id AS id, ip, CASE WHEN is_valid THEN 'Valide' ELSE 'Invalide' END AS resultat "
+                   f"FROM ip_format_checks ORDER BY check_id DESC LIMIT {LIMITE_HISTORIQUE}")
+
+
+def lister_classes_ip() -> list:
+    """F2 : [{'id', 'ip'}, ...] du plus récent au plus ancien."""
+    return _lister("lister_classes_ip",
+                   f"SELECT check_id AS id, ip FROM ip_class_checks ORDER BY check_id DESC LIMIT {LIMITE_HISTORIQUE}")
+
+
+def lister_masques_classe_ip() -> list:
+    """F3 : [{'id', 'ip'}, ...] du plus récent au plus ancien."""
+    return _lister("lister_masques_classe_ip",
+                   f"SELECT check_id AS id, ip FROM ip_class_mask_checks ORDER BY check_id DESC LIMIT {LIMITE_HISTORIQUE}")
+
+
+def lister_reseaux() -> list:
+    """F4 : [{'id', 'ip', 'masque'}, ...] du plus récent au plus ancien."""
+    return _lister("lister_reseaux",
+                   f"SELECT calc_id AS id, ip_address AS ip, subnet_mask AS masque FROM network_calculations ORDER BY calc_id DESC LIMIT {LIMITE_HISTORIQUE}")
+
+
+def lister_memes_reseaux() -> list:
+    """F5 : [{'id', 'ip1', 'mask1', 'ip2', 'mask2', 'modifie_par', 'modifie_le'}, ...]."""
+    return _lister("lister_memes_reseaux",
+                   "SELECT s.check_id AS id, s.ip1, s.mask1, s.ip2, s.mask2, "
+                   "u.username AS modifie_par, s.last_modified_at AS modifie_le "
+                   "FROM same_network_checks s LEFT JOIN users u ON u.user_id = s.last_modified_by "
+                   f"ORDER BY s.last_modified_at DESC, s.check_id DESC LIMIT {LIMITE_HISTORIQUE}")
+
+
+def lister_decoupes_sous_reseaux() -> list:
+    """F6 (découpe) : [{'id', 'reseau', 'cidr', 'nb_sous_reseaux', 'modifie_par', 'modifie_le'}, ...]."""
+    return _lister("lister_decoupes_sous_reseaux",
+                   "SELECT d.split_id AS id, d.network_address AS reseau, d.base_cidr AS cidr, "
+                   "d.requested_subnets AS nb_sous_reseaux, u.username AS modifie_par, d.last_modified_at AS modifie_le "
+                   "FROM subnet_splits d LEFT JOIN users u ON u.user_id = d.last_modified_by "
+                   f"ORDER BY d.last_modified_at DESC, d.split_id DESC LIMIT {LIMITE_HISTORIQUE}")

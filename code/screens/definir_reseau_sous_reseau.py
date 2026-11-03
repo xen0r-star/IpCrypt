@@ -2,7 +2,8 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
-from utils.data_service import enregistrer_reseau, ip_en_texte
+from utils.data_service import enregistrer_reseau, ip_en_texte, lister_reseaux
+from screens.historique_widget import creer_panneau_historique, remplir_octets
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -13,13 +14,13 @@ def definirClasse(premOctet):
     """Retourne la classe (A–E) d'une adresse IP à partir de son premier octet."""
     octet = int(premOctet)
     match octet:
-        case _ if 1 <= octet <= 126:
+        case _ if 0 <= octet <= 127:
             return "A"
         case _ if 128 <= octet <= 191:
             return "B"
         case _ if 192 <= octet <= 223:
             return "C"
-        case _ if 224 <= octet <= 240:
+        case _ if 224 <= octet <= 239:
             return "D"
         case _:
             return "E"
@@ -179,8 +180,8 @@ def create_get_network_ui(on_back=None, user_id=None):
     app.title("Définir réseau et sous-réseau")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
-    app.minsize(720, 520)
-    center_window(app, 720, 520)
+    app.minsize(720, 660)
+    center_window(app, 720, 700)
 
     def schedule_navigation(callback, *args, **kwargs):
         """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
@@ -240,6 +241,17 @@ def create_get_network_ui(on_back=None, user_id=None):
         val_label.pack(side="left", padx=10)
         result_labels[label_text] = val_label
 
+    def recharger_depuis_historique(ligne):
+        remplir_octets(group_entries[:4], ligne["ip"])
+        remplir_octets(group_entries[4:], ligne["masque"])
+
+    historique = creer_panneau_historique(
+        card, "Historique des calculs enregistrés",
+        [("ip", "IP", 280), ("masque", "Masque", 280)],
+        lister_reseaux,
+        recharger_depuis_historique,
+    )
+
     def on_verify():
         """Lit IP et masque, applique les validations strictes puis calcule les adresses."""
         # Réinitialisation visuelle par défaut avant calcul
@@ -263,9 +275,10 @@ def create_get_network_ui(on_back=None, user_id=None):
             result_labels["Adresse sous-réseau"].configure(text="Masque structurellement invalide", text_color=COLORS["danger"])
             return
 
-        # Fonctionnalité 4 : on stocke IP + masque (pas les résultats).
-        if not enregistrer_reseau(ip_en_texte(octetsIP), ip_en_texte(octetsMasque), user_id):
+        # Fonctionnalité 4 : on stocke IP + masque
+        if not enregistrer_reseau(ip_en_texte(octetsIP), ip_en_texte(octetsMasque), user_id, record_id=historique.id_selectionne()):
             messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
+        historique.rafraichir()
 
         # 3. Traitement et mise à jour de l'affichage si tout est correct
         classe = definirClasse(octetsIP[0])
@@ -284,6 +297,7 @@ def create_get_network_ui(on_back=None, user_id=None):
                 elif isinstance(widget, (ctk.CTkFrame, ctk.CTkScrollableFrame)):
                     clear_recursive(widget)
         clear_recursive(inputs_section)
+        historique.reinitialiser()
         for label in result_labels.values():
             label.configure(text="-", text_color=COLORS["muted"])
 

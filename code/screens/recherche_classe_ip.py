@@ -2,7 +2,8 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
-from utils.data_service import enregistrer_classe_ip, ip_en_texte
+from utils.data_service import enregistrer_classe_ip, ip_en_texte, lister_classes_ip
+from screens.historique_widget import creer_panneau_historique, remplir_octets
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -13,7 +14,7 @@ def definirClasse(premOctet):
     """Retourne la classe (A–E) d'une adresse IP à partir de son premier octet."""
     octet = int(premOctet)
     match octet:
-        case _ if 1 <= octet <= 126:
+        case _ if 0 <= octet <= 127:
             print("Classe A")
             return "A"
         case _ if 128 <= octet <= 191:
@@ -22,7 +23,7 @@ def definirClasse(premOctet):
         case _ if 192 <= octet <= 223:
             print("Classe C")
             return "C"
-        case _ if 224 <= octet <= 240:
+        case _ if 224 <= octet <= 239:
             print("Classe D")
             return "D"
         case _:
@@ -31,14 +32,18 @@ def definirClasse(premOctet):
 
 
 def definirTypeIP(octets):
-    """Retourne le type de l'adresse IP : Privée, Réservée (Loopback), Réservée (APIPA) ou Publique."""
-    o1, o2 = int(octets[0]), int(octets[1])
+    """Retourne le type de l'adresse IP : Privée, Réservée (précisée entre parenthèses) ou Publique."""
+    o1, o2, o3, o4 = (int(o) for o in octets)
 
     if o1 == 10: return "Privée"
     if o1 == 172 and 16 <= o2 <= 31: return "Privée"
     if o1 == 192 and o2 == 168: return "Privée"
+    if o1 == 0: return "Réservée (0.0.0.0/8)"
     if o1 == 127: return "Réservée (Loopback)"
     if o1 == 169 and o2 == 254: return "Réservée (APIPA)"
+    if 224 <= o1 <= 239: return "Réservée (Multicast)"
+    if o1 == 255 and o2 == 255 and o3 == 255 and o4 == 255: return "Réservée (Broadcast limité)"
+    if o1 >= 240: return "Réservée (Expérimentale)"
 
     return "Publique"
 
@@ -161,8 +166,8 @@ def create_definer_class_ui(on_back=None, user_id=None):
     app.title("Recherche classe IP")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
-    app.minsize(720, 520)
-    center_window(app, 720, 520)
+    app.minsize(720, 660)
+    center_window(app, 720, 700)
 
     def schedule_navigation(callback, *args, **kwargs):
         """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
@@ -221,6 +226,13 @@ def create_definer_class_ui(on_back=None, user_id=None):
         val_label.pack(side="left", padx=10)
         result_labels[label_text] = val_label
 
+    historique = creer_panneau_historique(
+        card, "Historique des IP enregistrées",
+        [("ip", "IP", 560)],
+        lister_classes_ip,
+        lambda ligne: remplir_octets(group_entries, ligne["ip"]),
+    )
+
     def on_verify():
         """Lit les octets, détermine la classe et le type d'adresse, puis met à jour l'affichage."""
         octets = lire_octets(group_entries)
@@ -228,8 +240,11 @@ def create_definer_class_ui(on_back=None, user_id=None):
         if octets:
             classe = definirClasse(octets[0])
             typeAdresse = definirTypeIP(octets)
-            if not enregistrer_classe_ip(ip_en_texte(octets), user_id):  # Fonctionnalité 2
+              
+            # Fonctionnalité 2
+            if not enregistrer_classe_ip(ip_en_texte(octets), user_id, record_id=historique.id_selectionne()):
                 messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
+            historique.rafraichir()
             result_labels["Classe du réseau"].configure(text=classe, text_color=COLORS["primary"])
             result_labels["Type d'adresse"].configure(text=typeAdresse, text_color=COLORS["primary"])
         else:
@@ -245,6 +260,7 @@ def create_definer_class_ui(on_back=None, user_id=None):
                 elif isinstance(widget, (ctk.CTkFrame, ctk.CTkScrollableFrame)):
                     clear_recursive(widget)
         clear_recursive(inputs_section)
+        historique.reinitialiser()
         for label in result_labels.values():
             label.configure(text="-", text_color=COLORS["muted"])
 

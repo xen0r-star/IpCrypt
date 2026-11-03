@@ -2,7 +2,8 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
-from utils.data_service import enregistrer_format_ip
+from utils.data_service import enregistrer_format_ip, lister_formats_ip
+from screens.historique_widget import creer_panneau_historique, remplir_octets
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -13,7 +14,7 @@ def definirClasse(premOctet):
     """Retourne la classe (A–E) d'une adresse IP à partir de son premier octet."""
     octet = int(premOctet)
     match octet:
-        case _ if 1 <= octet <= 126:
+        case _ if 0 <= octet <= 127:
             print("Classe A")
             return "A"
         case _ if 128 <= octet <= 191:
@@ -22,7 +23,7 @@ def definirClasse(premOctet):
         case _ if 192 <= octet <= 223:
             print("Classe C")
             return "C"
-        case _ if 224 <= octet <= 240:
+        case _ if 224 <= octet <= 239:
             print("Classe D")
             return "D"
         case _:
@@ -180,8 +181,8 @@ def create_ip_verification_ui(on_back=None, user_id=None):
     app.title("IP Vérification")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
-    app.minsize(720, 520)
-    center_window(app, 720, 520)
+    app.minsize(720, 660)
+    center_window(app, 720, 700)
 
     def schedule_navigation(callback, *args, **kwargs):
         """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
@@ -238,6 +239,13 @@ def create_ip_verification_ui(on_back=None, user_id=None):
         val_label.pack(side="left", padx=10)
         result_labels[label_text] = val_label
 
+    historique = creer_panneau_historique(
+        card, "Historique des IP enregistrées",
+        [("ip", "IP saisie", 400), ("resultat", "Résultat", 160)],
+        lister_formats_ip,
+        lambda ligne: remplir_octets(group_entries, ligne["ip"]),
+    )
+
     def on_verify():
         """Lit les octets, détermine la classe puis affiche le résultat de vérification."""
         octets_bruts = []
@@ -249,8 +257,9 @@ def create_ip_verification_ui(on_back=None, user_id=None):
 
         # Fonctionnalité 1 : on stocke l'IP saisie (même invalide) ET le résultat du contrôle de format.
         if ip_brute.strip("."):
-            if not enregistrer_format_ip(ip_brute, octets is not None, user_id):
+            if not enregistrer_format_ip(ip_brute, octets is not None, user_id, record_id=historique.id_selectionne()):
                 messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
+            historique.rafraichir()
 
         if octets:
             classe = definirClasse(octets[0])
@@ -268,6 +277,7 @@ def create_ip_verification_ui(on_back=None, user_id=None):
                 elif isinstance(widget, (ctk.CTkFrame, ctk.CTkScrollableFrame)):
                     clear_recursive(widget)
         clear_recursive(inputs_section)
+        historique.reinitialiser()
         result_labels["Résultat de la vérification"].configure(text="-", text_color=COLORS["muted"])
 
     actions = ctk.CTkFrame(container, fg_color="transparent")

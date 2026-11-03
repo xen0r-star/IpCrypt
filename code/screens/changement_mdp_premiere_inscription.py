@@ -76,12 +76,12 @@ def cleanup_window(window: ctk.CTk) -> None:
 
 
 def create_first_connection_ui(username, on_password_changed=None, on_back=None, back_button_text="Annuler"):
-    """Fenêtre de première connexion : force l'utilisateur à choisir un nouveau mot de passe avant d'accéder au menu."""
+    """Fenêtre de changement de mot de passe obligatoire (première connexion OU réinitialisation globale de sécurité) avant d'accéder au menu."""
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
     next_action = None
-    app.title("Changement mot de passe lors de la premiere inscription")
+    app.title("Changement de mot de passe obligatoire")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
     app.minsize(600, 520)
@@ -99,7 +99,7 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
 
     ctk.CTkLabel(
         container,
-        text="Premiere connexion",
+        text="Nouveau mot de passe",
         font=("Segoe UI", 34, "bold"),
         text_color=COLORS["text"],
     ).pack(anchor="center")

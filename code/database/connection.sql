@@ -71,3 +71,10 @@ CREATE TABLE IF NOT EXISTS audit_log (
     changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     details    TEXT
 );
+
+
+-- Table pour les votes de réinitialisation de sécurité par les administrateurs
+CREATE TABLE IF NOT EXISTS admin_reset_votes (
+    admin_id INTEGER PRIMARY KEY REFERENCES users(user_id),
+    voted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

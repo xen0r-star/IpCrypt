@@ -2,7 +2,8 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
-from utils.data_service import enregistrer_masque_classe_ip, ip_en_texte
+from utils.data_service import enregistrer_masque_classe_ip, ip_en_texte, lister_masques_classe_ip
+from screens.historique_widget import creer_panneau_historique, remplir_octets
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -13,7 +14,7 @@ def definirClasse(premOctet):
     """Retourne la classe (A–E) d'une adresse IP à partir de son premier octet."""
     octet = int(premOctet)
     match octet:
-        case _ if 1 <= octet <= 126:
+        case _ if 0 <= octet <= 127:
             print("Classe A")
             return "A"
         case _ if 128 <= octet <= 191:
@@ -22,7 +23,7 @@ def definirClasse(premOctet):
         case _ if 192 <= octet <= 223:
             print("Classe C")
             return "C"
-        case _ if 224 <= octet <= 240:
+        case _ if 224 <= octet <= 239:
             print("Classe D")
             return "D"
         case _:
@@ -161,8 +162,8 @@ def create_get_mask_ui(on_back=None, user_id=None):
     app.title("Recherche masque IP")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
-    app.minsize(720, 520)
-    center_window(app, 720, 520)
+    app.minsize(720, 660)
+    center_window(app, 720, 700)
 
     def schedule_navigation(callback, *args, **kwargs):
         """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
@@ -221,6 +222,13 @@ def create_get_mask_ui(on_back=None, user_id=None):
         val_label.pack(side="left", padx=10)
         result_labels[label_text] = val_label
 
+    historique = creer_panneau_historique(
+        card, "Historique des IP enregistrées",
+        [("ip", "IP", 560)],
+        lister_masques_classe_ip,
+        lambda ligne: remplir_octets(group_entries, ligne["ip"]),
+    )
+
     def on_verify():
         """Lit les octets, détermine la classe puis affiche le masque classful correspondant."""
         octets = lire_octets(group_entries)
@@ -228,8 +236,9 @@ def create_get_mask_ui(on_back=None, user_id=None):
         if octets:
             classe = definirClasse(octets[0])
             masque = definirMasque(classe)
-            if not enregistrer_masque_classe_ip(ip_en_texte(octets), user_id):  # Fonctionnalité 3
+            if not enregistrer_masque_classe_ip(ip_en_texte(octets), user_id, record_id=historique.id_selectionne()):  # Fonctionnalité 3
                 messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
+            historique.rafraichir()
             result_labels["Masque du réseau"].configure(text=masque, text_color=COLORS["primary"])
         else:
             result_labels["Masque du réseau"].configure(text="IP Invalide", text_color=COLORS["danger"])
@@ -243,6 +252,7 @@ def create_get_mask_ui(on_back=None, user_id=None):
                 elif isinstance(widget, (ctk.CTkFrame, ctk.CTkScrollableFrame)):
                     clear_recursive(widget)
         clear_recursive(inputs_section)
+        historique.reinitialiser()
         for label in result_labels.values():
             label.configure(text="-", text_color=COLORS["muted"])
 
