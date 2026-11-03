@@ -2,7 +2,8 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from pathlib import Path
-from utils.data_service import enregistrer_meme_reseau, ip_en_texte
+from utils.data_service import enregistrer_meme_reseau, ip_en_texte, lister_memes_reseaux
+from screens.historique_widget import creer_panneau_historique, remplir_octets
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 ctk.set_appearance_mode("light")
@@ -175,8 +176,8 @@ def create_ip_association_ui(on_back=None, user_id=None):
     app.title("IP Association")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
-    app.minsize(960, 680)
-    center_window(app, 960, 680)
+    app.minsize(960, 700)
+    center_window(app, 960, 760)
 
     def schedule_navigation(callback, *args, **kwargs):
         """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
@@ -222,6 +223,20 @@ def create_ip_association_ui(on_back=None, user_id=None):
     ip_octet_group(inputs_2, "IP 2", entries_store)
     ip_octet_group(inputs_2, "Masque 2", entries_store)
 
+    def recharger_depuis_historique(ligne):
+        remplir_octets(entries_store[0], ligne["ip1"])
+        remplir_octets(entries_store[1], ligne["mask1"])
+        remplir_octets(entries_store[2], ligne["ip2"])
+        remplir_octets(entries_store[3], ligne["mask2"])
+
+    historique = creer_panneau_historique(
+        card, "Historique des comparaisons enregistrées",
+        [("ip1", "IP 1", 120), ("mask1", "Masque 1", 120), ("ip2", "IP 2", 120), ("mask2", "Masque 2", 120),
+         ("modifie_par", "Dernier modificateur", 140), ("modifie_le", "Le", 130)],
+        lister_memes_reseaux,
+        recharger_depuis_historique,
+    )
+
     def on_inputs_changed(_event=None):
         """Avertit l'utilisateur que les valeurs ont changé et que le résultat affiché n'est plus à jour."""
         result_label.configure(
@@ -252,9 +267,11 @@ def create_ip_association_ui(on_back=None, user_id=None):
             result_label.configure(text="Erreur : le masque 2 est invalide", text_color=COLORS["error"])
             return
 
-        # Fonctionnalité 5 : on stocke les 2 couples IP/masque (pas le verdict) et le dernier modificateur.
-        if not enregistrer_meme_reseau(ip_en_texte(ip1), ip_en_texte(masque1), ip_en_texte(ip2), ip_en_texte(masque2), user_id):
+        # Fonctionnalité 5 : on stocke les 2 couples IP/masque et le dernier modificateur
+        if not enregistrer_meme_reseau(ip_en_texte(ip1), ip_en_texte(masque1), ip_en_texte(ip2), ip_en_texte(masque2),
+                                       user_id, record_id=historique.id_selectionne()):
             messagebox.showwarning("Base de données", "Enregistrement impossible (voir la console).")
+        historique.rafraichir()
 
         reseau1, reseau2, verdict, meme_reseau = calcule_adresse_reseau(ip1, masque1, ip2, masque2)
 
@@ -285,6 +302,7 @@ def create_ip_association_ui(on_back=None, user_id=None):
             for entry in group:
                 entry.delete(0, "end")
         result_label.configure(text="", text_color=COLORS["muted"])
+        historique.reinitialiser()
 
     app.bind("<Return>", lambda _e: on_associer())
 

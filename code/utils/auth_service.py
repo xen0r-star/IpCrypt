@@ -118,7 +118,7 @@ def update_motDePasse_premiere_connexion_database(username: str, passwordHashed:
             if ligne is None:
                 return False
             ecrire_audit(cur, "users", "UPDATE", ligne["user_id"], ligne["user_id"],
-                         "Changement du mot de passe (première connexion)")
+                         "Changement du mot de passe obligatoire (première connexion ou réinitialisation globale)")
             return True
     return _run(op)
 
@@ -164,4 +164,118 @@ def hashage_motDePasse(motDePasseEnClaire: str, source: str, username: str, prof
         else:
             return False
     except Exception:
+        return False
+
+
+def nouveau_mdp_identique_ancien(username: str, nouveau_mdp: str) -> bool:
+    """
+    True si le nouveau mot de passe est identique à celui actuellement stocké. Indispensable après une réinitialisation
+    globale : si la base a été volée, remettre le même mot de passe laisserait le hash volé valable.
+    """
+    try:
+        user = recuperation_motDePasse_database(username)
+        return user is not None and verification_motDePasse(nouveau_mdp, user.get("password", ""))
+    except Exception:
+        return False
+
+
+
+# Bouton de réinitialisation globale des mots de passe par les admins
+NB_ADMINS_REQUIS_RESET = 2    # nombre d'administrateurs DIFFÉRENTS à réunir
+VALIDITE_VOTE_HEURES = 24     # un vote plus ancien est ignoré et supprimé
+
+
+def etat_reinitialisation_globale() -> list | None:
+    """Retourne la liste des noms d'administrateurs ayant voté (votes encore valables), ou None en cas d'erreur."""
+    def op(cur):
+        cur.execute(
+            "SELECT u.username FROM admin_reset_votes v JOIN users u ON u.user_id = v.admin_id "
+            f"WHERE v.voted_at > NOW() - INTERVAL '{VALIDITE_VOTE_HEURES} hours' ORDER BY v.voted_at"
+        )
+        return [ligne["username"] for ligne in cur.fetchall()]
+    try:
+        return _run(op)
+    except Exception as e:
+        print(f"[DB] etat_reinitialisation_globale ERREUR {type(e).__name__}: {e}")
+        return None
+
+
+def a_deja_vote_reinitialisation(user_id: int) -> bool:
+    """True si l'administrateur user_id a un vote encore valable."""
+    def op(cur):
+        cur.execute(
+            "SELECT admin_id FROM admin_reset_votes "
+            f"WHERE admin_id=%s AND voted_at > NOW() - INTERVAL '{VALIDITE_VOTE_HEURES} hours'",
+            (user_id,),
+        )
+        return cur.fetchone() is not None
+    try:
+        return _run(op)
+    except Exception as e:
+        print(f"[DB] a_deja_vote_reinitialisation ERREUR {type(e).__name__}: {e}")
+        return False
+
+
+def voter_reinitialisation_globale(user_id: int) -> dict:
+    """
+    Enregistre le vote de l'administrateur user_id. Dès que NB_ADMINS_REQUIS_RESET administrateurs différents ont voté,
+    tous les comptes sont repassés en changement de mot de passe obligatoire et les votes sont effacés.
+    Retourne {'statut': ..., 'votes': [noms]} avec statut parmi : refuse, deja_vote, en_attente, declenche, erreur.
+    """
+    def op(cur):
+        with cur.connection.transaction():
+            # Le contrôle admin est refait ici côté base : on ne se fie pas au bouton affiché par l'interface.
+            cur.execute("SELECT is_admin FROM users WHERE user_id=%s", (user_id,))
+            ligne = cur.fetchone()
+            if ligne is None or not ligne["is_admin"]:
+                return {"statut": "refuse", "votes": []}
+
+            # Verrou : deux admins qui cliquent en même temps ne doivent pas se rater (chacun ne verrait que son vote).
+            cur.execute("LOCK TABLE admin_reset_votes IN SHARE ROW EXCLUSIVE MODE")
+            cur.execute(f"DELETE FROM admin_reset_votes WHERE voted_at <= NOW() - INTERVAL '{VALIDITE_VOTE_HEURES} hours'")
+            cur.execute(
+                "INSERT INTO admin_reset_votes (admin_id) VALUES (%s) ON CONFLICT (admin_id) DO NOTHING RETURNING admin_id",
+                (user_id,),
+            )
+            nouveau_vote = cur.fetchone() is not None
+            if nouveau_vote:
+                ecrire_audit(cur, "admin_reset_votes", "INSERT", user_id, user_id,
+                             "Vote pour la réinitialisation globale des mots de passe")
+
+            cur.execute(
+                "SELECT u.username FROM admin_reset_votes v JOIN users u ON u.user_id = v.admin_id ORDER BY v.voted_at"
+            )
+            votants = [r["username"] for r in cur.fetchall()]
+
+            if len(votants) >= NB_ADMINS_REQUIS_RESET:
+                cur.execute("UPDATE users SET is_firstconnexion = TRUE")
+                nb_comptes = cur.rowcount
+                cur.execute("DELETE FROM admin_reset_votes")
+                ecrire_audit(cur, "users", "UPDATE", "ALL", user_id,
+                             f"Réinitialisation globale des mots de passe ({nb_comptes} comptes), validée par : {', '.join(votants)}")
+                return {"statut": "declenche", "votes": votants}
+
+            return {"statut": "en_attente" if nouveau_vote else "deja_vote", "votes": votants}
+
+    try:
+        return _run(op)
+    except Exception as e:
+        print(f"[DB] voter_reinitialisation_globale ERREUR {type(e).__name__}: {e}")
+        return {"statut": "erreur", "votes": []}
+
+
+def annuler_vote_reinitialisation(user_id: int) -> bool:
+    """Retire le vote de l'administrateur user_id (clic par erreur). Retourne True si un vote a été retiré."""
+    def op(cur):
+        with cur.connection.transaction():
+            cur.execute("DELETE FROM admin_reset_votes WHERE admin_id=%s RETURNING admin_id", (user_id,))
+            if cur.fetchone() is None:
+                return False
+            ecrire_audit(cur, "admin_reset_votes", "DELETE", user_id, user_id,
+                         "Annulation du vote pour la réinitialisation globale des mots de passe")
+            return True
+    try:
+        return _run(op)
+    except Exception as e:
+        print(f"[DB] annuler_vote_reinitialisation ERREUR {type(e).__name__}: {e}")
         return False

@@ -61,7 +61,8 @@ def launch(splash: tk.Tk) -> None:
     from screens.recherche_masque_ip                import create_get_mask_ui
     from screens.definir_reseau_sous_reseau         import create_get_network_ui
     from screens.tableau_cidr                       import create_cidr_table_ui
-    from utils.auth_service             import hashage_motDePasse, recuperation_utilisateur_database
+    from screens.securite_admin                     import create_securite_admin_ui
+    from utils.auth_service             import hashage_motDePasse, recuperation_utilisateur_database, nouveau_mdp_identique_ancien
     from tkinter import messagebox
 
     try:
@@ -116,6 +117,11 @@ def launch(splash: tk.Tk) -> None:
         """Met à jour le mot de passe en base puis ouvre le menu."""
         if not username or not new_password:
             messagebox.showerror("Erreur", "Donnees de changement de mot de passe incompletes")
+            return
+
+        if nouveau_mdp_identique_ancien(username, new_password):
+            messagebox.showerror("Erreur", "Le nouveau mot de passe doit être différent de l'ancien.")
+            open_first_connexion(username=username, is_admin=is_admin, user_id=user_id)
             return
 
         if hashage_motDePasse(new_password, "first_connexion_ui", username):
@@ -173,9 +179,10 @@ def launch(splash: tk.Tk) -> None:
         create_menu_ui(
             on_open_menu_IP=open_ip_menu,
             on_open_ip_association=open_ip_association,
-            on_open_inscription=lambda: open_inscription(from_menu=True),
             on_open_cidr_table=open_cidr_table,
             on_logout=open_connexion,
+            on_open_inscription=lambda: open_inscription(from_menu=True),
+            on_open_securite=open_securite,
             is_admin=current_is_admin,
         )
 
@@ -191,6 +198,7 @@ def launch(splash: tk.Tk) -> None:
 
     def open_ip_association():          create_ip_association_ui(on_back=open_menu, user_id=current_user_id)
     def open_cidr_table():              create_cidr_table_ui(on_back=open_menu)
+    def open_securite():                create_securite_admin_ui(on_back=open_menu, user_id=current_user_id)
     def open_subnet_verification():     create_ip_verification_ui(on_back=open_ip_menu, user_id=current_user_id)
     def open_definer_classe():          create_definer_class_ui(on_back=open_ip_menu, user_id=current_user_id)
     def open_get_mask():                create_get_mask_ui(on_back=open_ip_menu, user_id=current_user_id)

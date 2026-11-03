@@ -67,12 +67,13 @@ def cleanup_window(window: ctk.CTk) -> None:
 def create_menu_ui(
     on_open_menu_IP=None,
     on_open_ip_association=None,
-    on_open_inscription=None,
     on_open_cidr_table=None,
     on_logout=None,
+    on_open_inscription=None,
+    on_open_securite=None,
     is_admin=False,
 ):
-    """Menu principal : liste les modules disponibles et route vers l'écran sélectionné. Le module Inscription n'est visible que pour les admins."""
+    """Menu principal : liste les modules disponibles et route vers l'écran sélectionné. Les modules Inscription et Sécurité ne sont visibles que pour les admins."""
     app = ctk.CTk()
     if ICO.exists():
         app.after(100, lambda: app.iconbitmap(str(ICO)))
@@ -80,8 +81,8 @@ def create_menu_ui(
     app.title("Menu principal")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
-    app.minsize(720, 520)
-    center_window(app, 720, 520)
+    app.minsize(720, 600)
+    center_window(app, 720, 600)
 
     def schedule_navigation(callback, *args, **kwargs):
         """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
@@ -121,9 +122,11 @@ def create_menu_ui(
         "IP Association",
         "Tableau CIDR",
     ]
-    # "Inscription" visible seulement pour les admins — inséré en tête pour mise en évidence.
+
+    # "Inscription" et "Sécurité" visibles seulement pour les admins
     if is_admin:
-        modules.insert(0, "Inscription")
+        modules.append("Inscription") # bouton d'inscription d'un nouvel utilisateur
+        modules.append("Sécurité")  # bouton de réinitialisation globale des mots de passe (2 admins)
 
     modules_var = ctk.StringVar(value=modules[0])
 
@@ -164,6 +167,7 @@ def create_menu_ui(
             "IP Association": on_open_ip_association,
             "Inscription": on_open_inscription,
             "Tableau CIDR": on_open_cidr_table,
+            "Sécurité": on_open_securite,
         }
         callback = routes.get(selected)
         if callable(callback):
