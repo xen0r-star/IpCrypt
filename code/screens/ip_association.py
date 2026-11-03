@@ -28,13 +28,13 @@ def calcule_adresse_reseau(ip1, masque1, ip2, masque2) -> tuple[list, list, str,
     b_voit_a = ip1_vu_par_masque2 == reseau2
 
     if a_voit_b and b_voit_a:
-        verdict = "A et B sont dans le même réseau."
+        verdict = "IP 1 et IP 2 sont dans le même réseau."
     elif a_voit_b:
-        verdict = "A voit B mais B ne voit pas A."
+        verdict = "IP 2 voit IP 1 mais IP 1 ne voit pas IP 2."
     elif b_voit_a:
-        verdict = "B voit A mais A ne voit pas B."
+        verdict = "IP 1 voit IP 2 mais IP 2 ne voit pas IP 1."
     else:
-        verdict = "A et B ne se voient pas."
+        verdict = "IP 1 et IP 2 ne se voient pas."
 
     return reseau1, reseau2, verdict, (a_voit_b and b_voit_a)
 
@@ -273,7 +273,7 @@ def create_ip_association_ui(on_back=None, user_id=None):
 
         couleur = COLORS["success"] if meme_reseau else COLORS["error"]
 
-        texte = f"Réseau 1 : {r1_str}\nRéseau 2 : {r2_str}\n\n{verdict}"
+        texte = f"IP 1 : {r1_str}\nIP 2 : {r2_str}\n\n{verdict}"
         if avertissements:
             texte += "\n\nAttention :\n- " + "\n- ".join(avertissements)
 
