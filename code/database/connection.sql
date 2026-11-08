@@ -9,9 +9,10 @@ CREATE TABLE IF NOT EXISTS users (
 
 INSERT INTO users (username, password, is_admin, is_firstConnexion)
 VALUES
-    ('client_test',   '$argon2id$v=19$m=65536,t=3,p=4$+GkIxD3Z1AXdgztOxiLBQg$6WK+Ku14fVXROPGX4AFXMyHvcDNnjkfZEYrW+YDs3WM', FALSE, FALSE),
+    ('client_test_1',   '$argon2id$v=19$m=65536,t=3,p=4$+GkIxD3Z1AXdgztOxiLBQg$6WK+Ku14fVXROPGX4AFXMyHvcDNnjkfZEYrW+YDs3WM', FALSE, FALSE),
     ('client_test_2', '$argon2id$v=19$m=65536,t=3,p=4$+GkIxD3Z1AXdgztOxiLBQg$6WK+Ku14fVXROPGX4AFXMyHvcDNnjkfZEYrW+YDs3WM', FALSE, TRUE),
-    ('client_test_3', '$argon2id$v=19$m=65536,t=3,p=4$+GkIxD3Z1AXdgztOxiLBQg$6WK+Ku14fVXROPGX4AFXMyHvcDNnjkfZEYrW+YDs3WM', TRUE,  FALSE)
+    ('client_test_3', '$argon2id$v=19$m=65536,t=3,p=4$+GkIxD3Z1AXdgztOxiLBQg$6WK+Ku14fVXROPGX4AFXMyHvcDNnjkfZEYrW+YDs3WM', TRUE,  FALSE),
+    ('client_test_4', '$argon2id$v=19$m=65536,t=3,p=4$+GkIxD3Z1AXdgztOxiLBQg$6WK+Ku14fVXROPGX4AFXMyHvcDNnjkfZEYrW+YDs3WM', TRUE,  FALSE)
 ON CONFLICT (username) DO NOTHING;
 
 -- Fonctionnalité 1 : format d'une IP (entrée brute, peut être invalide + RÉSULTAT du contrôle)
