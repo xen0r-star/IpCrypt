@@ -43,64 +43,6 @@ def _lister(nom: str, requete: str) -> list:
         return []
 
 
-def _enregistrer(cur, table: str, col_id: str, valeurs: dict, user_id: int,
-                 record_id=None, avec_modificateur: bool = False) -> None:
-    """
-    Règle commune à toutes les fonctionnalités (à appeler dans une transaction). table/col_id/colonnes sont des
-    constantes du code (jamais une saisie utilisateur), seules les valeurs passent en paramètres SQL.
-
-      - record_id fourni (enregistrement rechargé depuis l'historique) et valeurs changées -> UPDATE de cet enregistrement.
-      - valeurs déjà présentes en base -> pas de doublon : on ne fait que mettre à jour le dernier modificateur
-        (uniquement pour les tables qui en ont un).
-      - sinon -> INSERT.
-    Chaque INSERT/UPDATE est tagué dans audit_log avec le numéro d'employé.
-    """
-    colonnes = list(valeurs)
-    condition = " AND ".join(f"{c}=%s" for c in colonnes)
-    params = tuple(valeurs[c] for c in colonnes)
-    details = ", ".join(f"{c}={valeurs[c]}" for c in colonnes)
-
-    cur.execute(f"SELECT {col_id} FROM {table} WHERE {condition}", params)
-    identique = cur.fetchone()
-
-    # 1) Modification d'un enregistrement rechargé depuis l'historique
-    if record_id is not None and identique is None:
-        cur.execute(f"SELECT {', '.join(colonnes)} FROM {table} WHERE {col_id}=%s", (record_id,))
-        ancien = cur.fetchone()
-        if ancien is not None:
-            affectations = ", ".join(f"{c}=%s" for c in colonnes)
-            params_maj = params
-            if avec_modificateur:
-                affectations += ", last_modified_by=%s, last_modified_at=NOW()"
-                params_maj = params_maj + (user_id,)
-            cur.execute(f"UPDATE {table} SET {affectations} WHERE {col_id}=%s", params_maj + (record_id,))
-            avant = ", ".join(f"{c}={ancien[c]}" for c in colonnes)
-            ecrire_audit(cur, table, "UPDATE", record_id, user_id, f"avant : {avant} -> après : {details}")
-            return
-        # l'enregistrement n'existe plus (supprimé entre-temps) : on retombe sur un INSERT
-
-    # 2) Valeurs déjà connues : pas de doublon
-    if identique is not None:
-        if avec_modificateur:
-            cur.execute(
-                f"UPDATE {table} SET last_modified_by=%s, last_modified_at=NOW() WHERE {col_id}=%s",
-                (user_id, identique[col_id]),
-            )
-            ecrire_audit(cur, table, "UPDATE", identique[col_id], user_id, details)
-        return  # sans modificateur : rien n'a changé, rien à tagger
-
-    # 3) Nouvel enregistrement
-    colonnes_insert = colonnes + (["last_modified_by"] if avec_modificateur else [])
-    params_insert = params + ((user_id,) if avec_modificateur else ())
-    marqueurs = ", ".join(["%s"] * len(colonnes_insert))
-    cur.execute(
-        f"INSERT INTO {table} ({', '.join(colonnes_insert)}) VALUES ({marqueurs}) RETURNING {col_id}",
-        params_insert,
-    )
-    nouveau_id = cur.fetchone()[col_id]
-    ecrire_audit(cur, table, "INSERT", nouveau_id, user_id, details)
-
-
 # ══════════════════════════════════════════════
 # F1 à F4 : entrées (F1 : + résultat)
 # ══════════════════════════════════════════════
@@ -109,7 +51,29 @@ def enregistrer_format_ip(ip: str, est_valide: bool, user_id: int, record_id=Non
     """Fonctionnalité 1 : stocke l'IP saisie (brute, même invalide) ET le résultat du contrôle de format."""
     def op(cur):
         with cur.connection.transaction():
-            _enregistrer(cur, "ip_format_checks", "check_id", {"ip": ip, "is_valid": est_valide}, user_id, record_id)
+            # 1) Valeurs déjà en base : rien à faire
+            cur.execute("SELECT check_id FROM ip_format_checks WHERE ip=%s AND is_valid=%s", (ip, est_valide))
+            if cur.fetchone() is not None:
+                return
+
+            # 2) Modification d'un enregistrement rechargé depuis l'historique
+            if record_id is not None:
+                cur.execute("SELECT ip, is_valid FROM ip_format_checks WHERE check_id=%s", (record_id,))
+                ancien = cur.fetchone()
+                if ancien is not None:
+                    cur.execute("UPDATE ip_format_checks SET ip=%s, is_valid=%s WHERE check_id=%s",
+                                (ip, est_valide, record_id))
+                    ecrire_audit(cur, "ip_format_checks", "UPDATE", record_id, user_id,
+                                 f"avant : ip={ancien['ip']}, is_valid={ancien['is_valid']} -> après : ip={ip}, is_valid={est_valide}")
+                    return
+
+            # 3) Nouvel enregistrement
+            cur.execute("INSERT INTO ip_format_checks (ip, is_valid) VALUES (%s, %s) RETURNING check_id",
+                        (ip, est_valide))
+            nouveau_id = cur.fetchone()["check_id"]
+            ecrire_audit(cur, "ip_format_checks", "INSERT", nouveau_id, user_id,
+                         f"ip={ip}, is_valid={est_valide}")
+            
     return _executer("enregistrer_format_ip", op)
 
 
@@ -117,7 +81,26 @@ def enregistrer_classe_ip(ip: str, user_id: int, record_id=None) -> bool:
     """Fonctionnalité 2 : stocke uniquement l'IP saisie (le résultat se recalcule)."""
     def op(cur):
         with cur.connection.transaction():
-            _enregistrer(cur, "ip_class_checks", "check_id", {"ip": ip}, user_id, record_id)
+            # 1) Valeurs déjà en base : rien à faire
+            cur.execute("SELECT check_id FROM ip_class_checks WHERE ip=%s", (ip,))
+            if cur.fetchone() is not None:
+                return
+
+            # 2) Modification d'un enregistrement rechargé depuis l'historique
+            if record_id is not None:
+                cur.execute("SELECT ip FROM ip_class_checks WHERE check_id=%s", (record_id,))
+                ancien = cur.fetchone()
+                if ancien is not None:
+                    cur.execute("UPDATE ip_class_checks SET ip=%s WHERE check_id=%s", (ip, record_id))
+                    ecrire_audit(cur, "ip_class_checks", "UPDATE", record_id, user_id,
+                                 f"avant : ip={ancien['ip']} -> après : ip={ip}")
+                    return
+
+            # 3) Nouvel enregistrement
+            cur.execute("INSERT INTO ip_class_checks (ip) VALUES (%s) RETURNING check_id", (ip,))
+            nouveau_id = cur.fetchone()["check_id"]
+            ecrire_audit(cur, "ip_class_checks", "INSERT", nouveau_id, user_id, f"ip={ip}")
+
     return _executer("enregistrer_classe_ip", op)
 
 
@@ -125,22 +108,63 @@ def enregistrer_masque_classe_ip(ip: str, user_id: int, record_id=None) -> bool:
     """Fonctionnalité 3 : stocke uniquement l'IP saisie (le résultat se recalcule)."""
     def op(cur):
         with cur.connection.transaction():
-            _enregistrer(cur, "ip_class_mask_checks", "check_id", {"ip": ip}, user_id, record_id)
+            # 1) Valeurs déjà en base : rien à faire
+            cur.execute("SELECT check_id FROM ip_class_mask_checks WHERE ip=%s", (ip,))
+            if cur.fetchone() is not None:
+                return
+
+            # 2) Modification d'un enregistrement rechargé depuis l'historique
+            if record_id is not None:
+                cur.execute("SELECT ip FROM ip_class_mask_checks WHERE check_id=%s", (record_id,))
+                ancien = cur.fetchone()
+                if ancien is not None:
+                    cur.execute("UPDATE ip_class_mask_checks SET ip=%s WHERE check_id=%s", (ip, record_id))
+                    ecrire_audit(cur, "ip_class_mask_checks", "UPDATE", record_id, user_id,
+                                 f"avant : ip={ancien['ip']} -> après : ip={ip}")
+                    return
+
+            # 3) Nouvel enregistrement
+            cur.execute("INSERT INTO ip_class_mask_checks (ip) VALUES (%s) RETURNING check_id", (ip,))
+            nouveau_id = cur.fetchone()["check_id"]
+            ecrire_audit(cur, "ip_class_mask_checks", "INSERT", nouveau_id, user_id, f"ip={ip}")
+            
     return _executer("enregistrer_masque_classe_ip", op)
 
-
-# ══════════════════════════════════════════════
-# F4 : entrées ; F5 et F6 : entrées + dernier modificateur
-# ══════════════════════════════════════════════
 
 def enregistrer_reseau(ip: str, masque: str, user_id: int, record_id=None) -> bool:
     """Fonctionnalité 4 : stocke IP + masque (pas les résultats). Pas de dernier modificateur pour cette fonctionnalité."""
     def op(cur):
         with cur.connection.transaction():
-            _enregistrer(cur, "network_calculations", "calc_id",
-                         {"ip_address": ip, "subnet_mask": masque}, user_id, record_id)
+            # 1) Valeurs déjà en base : rien à faire
+            cur.execute("SELECT calc_id FROM network_calculations WHERE ip_address=%s AND subnet_mask=%s",
+                        (ip, masque))
+            if cur.fetchone() is not None:
+                return
+
+            # 2) Modification d'un enregistrement rechargé depuis l'historique
+            if record_id is not None:
+                cur.execute("SELECT ip_address, subnet_mask FROM network_calculations WHERE calc_id=%s", (record_id,))
+                ancien = cur.fetchone()
+                if ancien is not None:
+                    cur.execute("UPDATE network_calculations SET ip_address=%s, subnet_mask=%s WHERE calc_id=%s",
+                                (ip, masque, record_id))
+                    ecrire_audit(cur, "network_calculations", "UPDATE", record_id, user_id,
+                                 f"avant : ip_address={ancien['ip_address']}, subnet_mask={ancien['subnet_mask']} "
+                                 f"-> après : ip_address={ip}, subnet_mask={masque}")
+                    return
+
+            # 3) Nouvel enregistrement
+            cur.execute("INSERT INTO network_calculations (ip_address, subnet_mask) VALUES (%s, %s) RETURNING calc_id",
+                        (ip, masque))
+            nouveau_id = cur.fetchone()["calc_id"]
+            ecrire_audit(cur, "network_calculations", "INSERT", nouveau_id, user_id,
+                         f"ip_address={ip}, subnet_mask={masque}")
     return _executer("enregistrer_reseau", op)
 
+
+# ══════════════════════════════════════════════
+# F5 et F6 : entrées + dernier modificateur
+# ══════════════════════════════════════════════
 
 def enregistrer_meme_reseau(ip1: str, mask1: str, ip2: str, mask2: str, user_id: int, record_id=None) -> bool:
     """
@@ -149,9 +173,41 @@ def enregistrer_meme_reseau(ip1: str, mask1: str, ip2: str, mask2: str, user_id:
     """
     def op(cur):
         with cur.connection.transaction():
-            _enregistrer(cur, "same_network_checks", "check_id",
-                         {"ip1": ip1, "mask1": mask1, "ip2": ip2, "mask2": mask2},
-                         user_id, record_id, avec_modificateur=True)
+            details = f"ip1={ip1}, mask1={mask1}, ip2={ip2}, mask2={mask2}"
+
+            # 1) Valeurs déjà en base : pas de doublon, on met à jour le dernier modificateur
+            cur.execute("SELECT check_id FROM same_network_checks WHERE ip1=%s AND mask1=%s AND ip2=%s AND mask2=%s",
+                        (ip1, mask1, ip2, mask2))
+            identique = cur.fetchone()
+            if identique is not None:
+                cur.execute("UPDATE same_network_checks SET last_modified_by=%s, last_modified_at=NOW() WHERE check_id=%s",
+                            (user_id, identique["check_id"]))
+                ecrire_audit(cur, "same_network_checks", "UPDATE", identique["check_id"], user_id, details)
+                return
+
+            # 2) Modification d'un enregistrement rechargé depuis l'historique
+            if record_id is not None:
+                cur.execute("SELECT ip1, mask1, ip2, mask2 FROM same_network_checks WHERE check_id=%s", (record_id,))
+                ancien = cur.fetchone()
+                if ancien is not None:
+                    cur.execute(
+                        "UPDATE same_network_checks SET ip1=%s, mask1=%s, ip2=%s, mask2=%s, "
+                        "last_modified_by=%s, last_modified_at=NOW() WHERE check_id=%s",
+                        (ip1, mask1, ip2, mask2, user_id, record_id),
+                    )
+                    ecrire_audit(cur, "same_network_checks", "UPDATE", record_id, user_id,
+                                 f"avant : ip1={ancien['ip1']}, mask1={ancien['mask1']}, ip2={ancien['ip2']}, mask2={ancien['mask2']} "
+                                 f"-> après : {details}")
+                    return
+
+            # 3) Nouvel enregistrement
+            cur.execute(
+                "INSERT INTO same_network_checks (ip1, mask1, ip2, mask2, last_modified_by) "
+                "VALUES (%s, %s, %s, %s, %s) RETURNING check_id",
+                (ip1, mask1, ip2, mask2, user_id),
+            )
+            nouveau_id = cur.fetchone()["check_id"]
+            ecrire_audit(cur, "same_network_checks", "INSERT", nouveau_id, user_id, details)
     return _executer("enregistrer_meme_reseau", op)
 
 
@@ -162,9 +218,45 @@ def enregistrer_decoupe_sous_reseaux(adresse_reseau: str, cidr_base: int, nb_sou
     """
     def op(cur):
         with cur.connection.transaction():
-            _enregistrer(cur, "subnet_splits", "split_id",
-                         {"network_address": adresse_reseau, "base_cidr": cidr_base, "requested_subnets": nb_sous_reseaux},
-                         user_id, record_id, avec_modificateur=True)
+            details = f"network_address={adresse_reseau}, base_cidr={cidr_base}, requested_subnets={nb_sous_reseaux}"
+
+            # 1) Valeurs déjà en base : pas de doublon, on met à jour le dernier modificateur
+            cur.execute(
+                "SELECT split_id FROM subnet_splits "
+                "WHERE network_address=%s AND base_cidr=%s AND requested_subnets=%s",
+                (adresse_reseau, cidr_base, nb_sous_reseaux),
+            )
+            identique = cur.fetchone()
+            if identique is not None:
+                cur.execute("UPDATE subnet_splits SET last_modified_by=%s, last_modified_at=NOW() WHERE split_id=%s",
+                            (user_id, identique["split_id"]))
+                ecrire_audit(cur, "subnet_splits", "UPDATE", identique["split_id"], user_id, details)
+                return
+
+            # 2) Modification d'un enregistrement rechargé depuis l'historique
+            if record_id is not None:
+                cur.execute("SELECT network_address, base_cidr, requested_subnets FROM subnet_splits WHERE split_id=%s",
+                            (record_id,))
+                ancien = cur.fetchone()
+                if ancien is not None:
+                    cur.execute(
+                        "UPDATE subnet_splits SET network_address=%s, base_cidr=%s, requested_subnets=%s, "
+                        "last_modified_by=%s, last_modified_at=NOW() WHERE split_id=%s",
+                        (adresse_reseau, cidr_base, nb_sous_reseaux, user_id, record_id),
+                    )
+                    ecrire_audit(cur, "subnet_splits", "UPDATE", record_id, user_id,
+                                 f"avant : network_address={ancien['network_address']}, base_cidr={ancien['base_cidr']}, "
+                                 f"requested_subnets={ancien['requested_subnets']} -> après : {details}")
+                    return
+
+            # 3) Nouvel enregistrement
+            cur.execute(
+                "INSERT INTO subnet_splits (network_address, base_cidr, requested_subnets, last_modified_by) "
+                "VALUES (%s, %s, %s, %s) RETURNING split_id",
+                (adresse_reseau, cidr_base, nb_sous_reseaux, user_id),
+            )
+            nouveau_id = cur.fetchone()["split_id"]
+            ecrire_audit(cur, "subnet_splits", "INSERT", nouveau_id, user_id, details)
     return _executer("enregistrer_decoupe_sous_reseaux", op)
 
 

@@ -21,13 +21,11 @@ TEXTE_NOUVEAU = "Mode : nouvel enregistrement"
 
 
 def remplir_octets(entries: list, texte: str) -> None:
-    """Remplit un groupe de 4 champs Entry à partir d'une IP/masque en texte (ex. '10.0.0.1'). Les octets manquants restent vides."""
-    parties = str(texte).split(".")
-    for i, entry in enumerate(entries):
-        entry.delete(0, "end")
-        valeur = parties[i].strip() if i < len(parties) else ""
-        if valeur:
-            entry.insert(0, valeur)
+    """Remplit un groupe de 4 champs Entry à partir d'une IP/masque en texte (ex. '10.0.0.1')."""
+    octets = str(texte).split(".")
+    for i in range(4):
+        entries[i].delete(0, "end")
+        entries[i].insert(0, octets[i])
 
 
 def _formater(valeur) -> str:
@@ -103,12 +101,16 @@ def creer_panneau_historique(parent, titre: str, colonnes: list, charger, on_sel
         """Recharge la liste depuis la base et quitte le mode modification."""
         lignes.clear()
         tree.delete(*tree.get_children())
+
+        valeurs = []
+        for cle in cles:
+            valeurs.append(_formater(ligne[cle]))
+
         for ligne in charger():
             iid = str(ligne["id"])
             lignes[iid] = ligne
-            tree.insert("", "end", iid=iid, values=[_formater(ligne.get(cle)) for cle in cles])
-        etat["id"] = None
-        label_mode.configure(text=TEXTE_NOUVEAU, text_color=COLORS["muted"])
+            tree.insert("", "end", iid=iid, values=valeurs)
+        reinitialiser()
 
     def on_tree_select(_event=None) -> None:
         selection = tree.selection()
