@@ -27,6 +27,58 @@ def remplir_octets(entries: list, texte: str) -> None:
         entries[i].delete(0, "end")
         entries[i].insert(0, octets[i])
 
+def activer_saisie_rapide(entries: list) -> None:
+    """Saisie rapide d'une IP en 4 cases: passage auto à la case suivante (3 chiffres ou '.') et collage d'une IP complète."""
+
+    def preparer_case(case, case_suivante):
+        """Branche les deux comportements sur UNE case."""
+
+        def apres_frappe(event):
+            if case_suivante is None:
+                return
+            touche = event.char
+            
+            point_tape = (touche in (".", ",") and case.get() != "")
+            trois_chiffres = (touche.isdigit() and len(case.get()) == 3)
+
+            if point_tape or trois_chiffres:
+                case_suivante.focus_set()
+                case_suivante.select_range(0, "end")
+
+        def au_collage(event):
+            try:
+                texte = case.clipboard_get()
+            except Exception:
+                return None
+
+            morceaux = texte.split(".")
+            if len(morceaux) != 4:
+                return None
+
+            ip_valide = True
+            for i in range(4):
+                morceaux[i] = morceaux[i].strip()
+                if not morceaux[i].isdecimal() or len(morceaux[i]) > 3:
+                    ip_valide = False
+
+            if not ip_valide:
+                return None
+
+            for i in range(4):
+                entries[i].delete(0, "end")
+                entries[i].insert(0, morceaux[i])
+            entries[3].focus_set()
+            return "break"
+
+        case.bind("<KeyRelease>", apres_frappe)
+        case.bind("<<Paste>>", au_collage)
+
+    for i in range(4):
+        if i < 3:
+            suivante = entries[i + 1]
+        else:
+            suivante = None
+        preparer_case(entries[i], suivante)
 
 def _formater(valeur) -> str:
     """Texte affiché dans une cellule : vide pour None, 'jj/mm/aaaa hh:mm' pour une date, str() sinon."""
