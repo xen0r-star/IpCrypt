@@ -3,7 +3,7 @@ import customtkinter as ctk
 
 from pathlib import Path
 from utils.data_service import enregistrer_classe_ip, ip_en_texte, lister_classes_ip
-from screens.historique_widget import creer_panneau_historique, remplir_octets
+from screens.historique_widget import activer_saisie_rapide, creer_panneau_historique, remplir_octets
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -143,6 +143,7 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 18, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
 
+        activer_saisie_rapide(group_entries[-4:])
 
 def lire_octets(group: list) -> list | None:
     """Extrait les 4 octets d'un groupe de champs Entry. Retourne None si un octet est vide ou hors de 0–255."""

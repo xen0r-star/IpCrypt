@@ -3,7 +3,7 @@ import customtkinter as ctk
 
 from pathlib import Path
 from utils.data_service import enregistrer_meme_reseau, ip_en_texte, lister_memes_reseaux
-from screens.historique_widget import creer_panneau_historique, remplir_octets
+from screens.historique_widget import activer_saisie_rapide, creer_panneau_historique, remplir_octets
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 ctk.set_appearance_mode("light")
@@ -123,6 +123,8 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str, entries_store: list) -
         group_entries.append(entry)
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 20, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
+
+        activer_saisie_rapide(group_entries[-4:])
 
     entries_store.append(group_entries)
 
