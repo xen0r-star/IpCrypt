@@ -69,6 +69,7 @@ def create_menu_ip_ui(
     on_open_definer_classe=None,
     on_open_get_mask=None,
     on_open_get_network=None,
+    on_open_decoupe=None,
     on_back=None,
     is_admin=False,
 ):
@@ -80,8 +81,8 @@ def create_menu_ip_ui(
     app.title("Gestion adresse IP")
     app.configure(fg_color=COLORS["bg"])
     app.resizable(True, True)
-    app.minsize(720, 520)
-    center_window(app, 720, 520)
+    app.minsize(720, 600)
+    center_window(app, 720, 600)
 
     def schedule_navigation(callback, *args, **kwargs):
         """Stocke le callback et quitte mainloop ; le callback s'exécute après cleanup_window."""
@@ -121,6 +122,7 @@ def create_menu_ip_ui(
         "Recherche classe IP",
         "Recherche masque IP",
         "Définir réseau et sous réseau",
+        "Découpe en sous-réseaux",
     ]
 
     modules_var = ctk.StringVar(value=modules[0])
@@ -162,6 +164,7 @@ def create_menu_ip_ui(
             "Recherche classe IP": on_open_definer_classe,
             "Recherche masque IP": on_open_get_mask,
             "Définir réseau et sous réseau": on_open_get_network,
+            "Découpe en sous-réseaux": on_open_decoupe,
         }
         callback = routes.get(selected)
         if callable(callback):

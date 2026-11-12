@@ -1,3 +1,4 @@
+from utils import decoupes_sqlite
 from utils.auth_service import _run, ecrire_audit
 
 # ══════════════════════════════════════════════
@@ -6,7 +7,7 @@ from utils.auth_service import _run, ecrire_audit
 # F3 : masque de classe         -> ip_class_mask_checks  (entrée)
 # F4 : réseau / sous-réseau     -> network_calculations  (entrées)
 # F5 : même réseau ?            -> same_network_checks   (entrées + dernier modificateur)
-# F6 : découpe en sous-réseaux  -> subnet_splits         (entrées + dernier modificateur)
+# F6 : découpe en sous-réseaux  -> subnet_splits         (entrées + dernier modificateur) — SQLite 3, voir utils/decoupes_sqlite.py
 # ══════════════════════════════════════════════
 
 LIMITE_HISTORIQUE = 100  # nombre maximum de lignes renvoyées aux écrans pour l'historique
@@ -213,51 +214,25 @@ def enregistrer_meme_reseau(ip1: str, mask1: str, ip2: str, mask2: str, user_id:
 
 def enregistrer_decoupe_sous_reseaux(adresse_reseau: str, cidr_base: int, nb_sous_reseaux: int, user_id: int, record_id=None) -> bool:
     """
-    Fonctionnalité 6 (découpe en sous-réseaux) : stocke uniquement les entrées de la découpe et le dernier modificateur.
-    Si ces valeurs existent déjà, seul le dernier modificateur est mis à jour.
+    Fonctionnalité 6 (découpe en sous-réseaux) : stocke uniquement les entrées de la découpe et le dernier modificateur,
+    dans la base SQLite 3 (utils/decoupes_sqlite.py). Si ces valeurs existent déjà, seul le dernier modificateur est mis à jour.
+    La modification est aussi tagguée (numéro d'employé) dans le journal audit_log de PostgreSQL.
     """
-    def op(cur):
+    if user_id is None:
+        print("[SQLite] enregistrer_decoupe_sous_reseaux ERREUR : le numéro d'employé est obligatoire.")
+        return False
+    try:
+        operation, id_ligne, details = decoupes_sqlite.enregistrer(adresse_reseau, cidr_base, nb_sous_reseaux, user_id, record_id)
+    except Exception as e:
+        print(f"[SQLite] enregistrer_decoupe_sous_reseaux ERREUR {type(e).__name__}: {e}")
+        return False
+
+    # Les deux bases ne partagent pas de transaction : la découpe est déjà enregistrée, l'audit est écrit juste après.
+    def audit(cur):
         with cur.connection.transaction():
-            details = f"network_address={adresse_reseau}, base_cidr={cidr_base}, requested_subnets={nb_sous_reseaux}"
-
-            # 1) Valeurs déjà en base : pas de doublon, on met à jour le dernier modificateur
-            cur.execute(
-                "SELECT split_id FROM subnet_splits "
-                "WHERE network_address=%s AND base_cidr=%s AND requested_subnets=%s",
-                (adresse_reseau, cidr_base, nb_sous_reseaux),
-            )
-            identique = cur.fetchone()
-            if identique is not None:
-                cur.execute("UPDATE subnet_splits SET last_modified_by=%s, last_modified_at=NOW() WHERE split_id=%s",
-                            (user_id, identique["split_id"]))
-                ecrire_audit(cur, "subnet_splits", "UPDATE", identique["split_id"], user_id, details)
-                return
-
-            # 2) Modification d'un enregistrement rechargé depuis l'historique
-            if record_id is not None:
-                cur.execute("SELECT network_address, base_cidr, requested_subnets FROM subnet_splits WHERE split_id=%s",
-                            (record_id,))
-                ancien = cur.fetchone()
-                if ancien is not None:
-                    cur.execute(
-                        "UPDATE subnet_splits SET network_address=%s, base_cidr=%s, requested_subnets=%s, "
-                        "last_modified_by=%s, last_modified_at=NOW() WHERE split_id=%s",
-                        (adresse_reseau, cidr_base, nb_sous_reseaux, user_id, record_id),
-                    )
-                    ecrire_audit(cur, "subnet_splits", "UPDATE", record_id, user_id,
-                                 f"avant : network_address={ancien['network_address']}, base_cidr={ancien['base_cidr']}, "
-                                 f"requested_subnets={ancien['requested_subnets']} -> après : {details}")
-                    return
-
-            # 3) Nouvel enregistrement
-            cur.execute(
-                "INSERT INTO subnet_splits (network_address, base_cidr, requested_subnets, last_modified_by) "
-                "VALUES (%s, %s, %s, %s) RETURNING split_id",
-                (adresse_reseau, cidr_base, nb_sous_reseaux, user_id),
-            )
-            nouveau_id = cur.fetchone()["split_id"]
-            ecrire_audit(cur, "subnet_splits", "INSERT", nouveau_id, user_id, details)
-    return _executer("enregistrer_decoupe_sous_reseaux", op)
+            ecrire_audit(cur, "subnet_splits", operation, id_ligne, user_id, details)
+    _executer("audit_decoupe_sous_reseaux", audit)
+    return True
 
 
 # ══════════════════════════════════════════════
@@ -298,10 +273,30 @@ def lister_memes_reseaux() -> list:
                    f"ORDER BY s.last_modified_at DESC, s.check_id DESC LIMIT {LIMITE_HISTORIQUE}")
 
 
+def _noms_utilisateurs(ids) -> dict:
+    """{user_id: username} pour les numéros d'employé donnés (table users de PostgreSQL) ; {} en cas d'erreur."""
+    if not ids:
+        return {}
+
+    def op(cur):
+        cur.execute("SELECT user_id, username FROM users WHERE user_id = ANY(%s)", (list(ids),))
+        return {ligne["user_id"]: ligne["username"] for ligne in cur.fetchall()}
+    try:
+        return _run(op)
+    except Exception as e:
+        print(f"[DB] _noms_utilisateurs ERREUR {type(e).__name__}: {e}")
+        return {}
+
+
 def lister_decoupes_sous_reseaux() -> list:
-    """F6 (découpe) : [{'id', 'reseau', 'cidr', 'nb_sous_reseaux', 'modifie_par', 'modifie_le'}, ...]."""
-    return _lister("lister_decoupes_sous_reseaux",
-                   "SELECT d.split_id AS id, d.network_address AS reseau, d.base_cidr AS cidr, "
-                   "d.requested_subnets AS nb_sous_reseaux, u.username AS modifie_par, d.last_modified_at AS modifie_le "
-                   "FROM subnet_splits d LEFT JOIN users u ON u.user_id = d.last_modified_by "
-                   f"ORDER BY d.last_modified_at DESC, d.split_id DESC LIMIT {LIMITE_HISTORIQUE}")
+    """F6 (découpe) : [{'id', 'reseau', 'cidr', 'nb_sous_reseaux', 'modifie_par', 'modifie_le'}, ...] depuis SQLite 3."""
+    try:
+        lignes = decoupes_sqlite.lister(LIMITE_HISTORIQUE)
+    except Exception as e:
+        print(f"[SQLite] lister_decoupes_sous_reseaux ERREUR {type(e).__name__}: {e}")
+        return []
+    noms = _noms_utilisateurs({ligne["modifie_par_id"] for ligne in lignes})
+    for ligne in lignes:
+        numero = ligne.pop("modifie_par_id")
+        ligne["modifie_par"] = noms.get(numero, f"n° {numero}")
+    return lignes

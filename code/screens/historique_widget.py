@@ -102,14 +102,10 @@ def creer_panneau_historique(parent, titre: str, colonnes: list, charger, on_sel
         lignes.clear()
         tree.delete(*tree.get_children())
 
-        valeurs = []
-        for cle in cles:
-            valeurs.append(_formater(ligne[cle]))
-
         for ligne in charger():
             iid = str(ligne["id"])
             lignes[iid] = ligne
-            tree.insert("", "end", iid=iid, values=valeurs)
+            tree.insert("", "end", iid=iid, values=[_formater(ligne[cle]) for cle in cles])
         reinitialiser()
 
     def on_tree_select(_event=None) -> None:

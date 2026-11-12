@@ -61,6 +61,7 @@ def launch(splash: tk.Tk) -> None:
     from screens.recherche_masque_ip                import create_get_mask_ui
     from screens.definir_reseau_sous_reseau         import create_get_network_ui
     from screens.tableau_cidr                       import create_cidr_table_ui
+    from screens.decoupe_sous_reseaux               import create_decoupe_ui
     from screens.securite_admin                     import create_securite_admin_ui
     from utils.auth_service             import hashage_motDePasse, recuperation_utilisateur_database, nouveau_mdp_identique_ancien
     from tkinter import messagebox
@@ -193,6 +194,7 @@ def launch(splash: tk.Tk) -> None:
             on_open_definer_classe=open_definer_classe,
             on_open_get_mask=open_get_mask,
             on_open_get_network=open_get_network,
+            on_open_decoupe=open_decoupe,
             on_back=open_menu,
         )
 
@@ -203,6 +205,7 @@ def launch(splash: tk.Tk) -> None:
     def open_definer_classe():          create_definer_class_ui(on_back=open_ip_menu, user_id=current_user_id)
     def open_get_mask():                create_get_mask_ui(on_back=open_ip_menu, user_id=current_user_id)
     def open_get_network():             create_get_network_ui(on_back=open_ip_menu, user_id=current_user_id)
+    def open_decoupe():                 create_decoupe_ui(on_back=open_ip_menu, user_id=current_user_id)
 
     open_connexion()
 
