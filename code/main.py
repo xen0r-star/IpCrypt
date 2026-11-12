@@ -3,7 +3,7 @@ import ctypes
 from pathlib import Path
 from PIL import Image, ImageTk
 
-# Icône barre des tâches Windows — doit être défini AVANT tout import tkinter/ctk.
+# Icône barre des tâches Windows - doit être défini AVANT tout import tkinter/ctk.
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("IpCrypt.NetworkTool.1.0")
 
 BASE = Path(__file__).resolve().parent

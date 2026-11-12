@@ -1,7 +1,5 @@
 BITS_HOTE_MIN = 2
-
 LIMITE_LIGNES = 500
-
 CIDR_PAR_CLASSE = {"A": 8, "B": 16, "C": 24}
 
 def classe_depuis_octet(premier_octet: int) -> str:

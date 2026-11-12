@@ -228,7 +228,7 @@ def create_first_connection_ui(username, on_password_changed=None, on_back=None,
         next_action()
 
 
-# Alias mort — main.py importe create_inscription_ui depuis register_screen.
+# Alias mort - main.py importe create_inscription_ui depuis register_screen.
 def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text="Connexion"):
     create_first_connection_ui(
         username="",

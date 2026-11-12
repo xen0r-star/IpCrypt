@@ -130,7 +130,7 @@ def update_motDePasse_premiere_connexion_database(username: str, passwordHashed:
 def verification_motDePasse(passwordToVerify: str, passwordHashed: str) -> bool:
     """Vérifie un mot de passe en clair contre un hash Argon2 stocké en base."""
     try:
-        # verify(stored_hash, plain_password) — ordre contre-intuitif imposé par argon2-cffi.
+        # verify(stored_hash, plain_password) - ordre contre-intuitif imposé par argon2-cffi.
         pwdHasher.verify(passwordHashed, passwordToVerify)
         return True
     except exceptions.VerifyMismatchError:

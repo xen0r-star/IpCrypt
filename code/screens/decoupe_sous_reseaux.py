@@ -142,7 +142,7 @@ def create_decoupe_ui(on_back=None, user_id=None):
     card = ctk.CTkScrollableFrame(container, fg_color=COLORS["surface"], border_width=1, border_color=COLORS["border"], corner_radius=14)
     card.pack(fill="both", expand=True)
 
-    # ── Saisie ───────────────────────────────────────────────
+    # -- Saisie ----------------------------------------------------------
     inputs_section = ctk.CTkFrame(card, fg_color="transparent")
     inputs_section.pack(fill="x", padx=20, pady=(18, 6))
 
@@ -155,7 +155,7 @@ def create_decoupe_ui(on_back=None, user_id=None):
     entry_nb = ctk.CTkEntry(row_nb, width=120, height=36, justify="center", fg_color=COLORS["panel"], border_color=COLORS["border"], validate="key", validatecommand=vcmd_nb)
     entry_nb.pack(side="left")
 
-    # ── Résultat : résumé + tableau des sous-réseaux ──────────
+    # -- Résultat: résumé + tableau des sous-réseaux ---------------------
     results = ctk.CTkFrame(card, fg_color=COLORS["panel"], border_width=1, border_color=COLORS["border"], corner_radius=12)
     results.pack(fill="x", padx=20, pady=(0, 14))
 
@@ -186,7 +186,7 @@ def create_decoupe_ui(on_back=None, user_id=None):
     scrollbar.grid(row=0, column=1, sticky="ns")
     zone_tableau.grid_columnconfigure(0, weight=1)
 
-    # ── Historique (fonctionnalité 6 : entrées + dernier modificateur) ──
+    # -- Historique (fonctionnalité 6 : entrées + dernier modificateur) --
     def recharger_depuis_historique(ligne):
         remplir_octets(entries_ip, ligne["reseau"])
         entry_nb.delete(0, "end")
@@ -230,9 +230,9 @@ def create_decoupe_ui(on_back=None, user_id=None):
         historique.rafraichir()
 
         texte = (
-            f"Classe {decoupe['classe']} — réseau {decoupe['adresse_reseau']}/{decoupe['cidr_base']} "
+            f"Classe {decoupe['classe']} - réseau {decoupe['adresse_reseau']}/{decoupe['cidr_base']} "
             f"(masque {decoupe['masque_base']})\n"
-            f"Bits empruntés : {decoupe['bits_empruntes']}  →  nouveau masque {decoupe['nouveau_masque']} (/{decoupe['nouveau_cidr']})\n"
+            f"Bits empruntés : {decoupe['bits_empruntes']}  ->  nouveau masque {decoupe['nouveau_masque']} (/{decoupe['nouveau_cidr']})\n"
             f"Sous-réseaux obtenus : {decoupe['nb_obtenus']} (demandés : {decoupe['nb_demande']})   |   "
             f"Hôtes utilisables par sous-réseau : {decoupe['hotes_par_sous_reseau']}"
         )
