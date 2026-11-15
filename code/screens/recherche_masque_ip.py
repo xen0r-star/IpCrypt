@@ -35,13 +35,13 @@ def definirMasque(classe):
     """Retourne le masque par défaut (classful) associé à la classe donnée."""
     match classe:
         case "A":
-            return "255.000.000.000"
+            return "255.0.0.0"
         case "B":
-            return "255.255.000.000"
+            return "255.255.0.0"
         case "C":
-            return "255.255.255.000"
+            return "255.255.255.0"
         case _:
-            return "Pas de masque"
+            return f"Pas de masque de classe (classe {classe} : multicast/expérimentale)"
 
 
 # ══════════════════════════════════════════════
@@ -139,7 +139,7 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> None:
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 18, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
 
-        activer_saisie_rapide(group_entries[-4:])
+    activer_saisie_rapide(group_entries[-4:])
 
 def lire_octets(group: list) -> list | None:
     """Extrait les 4 octets d'un groupe de champs Entry. Retourne None si un octet est vide ou hors de 0–255."""

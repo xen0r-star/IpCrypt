@@ -177,12 +177,16 @@ def create_inscription_ui(on_signup_success=None, on_back=None, back_button_text
 
     def on_submit_signup():
         """Valide la politique de mot de passe puis transmet les données au callback d'inscription."""
-        username = entryUserNameInscription.get().strip()[:50]
-        password = entryPasswordInscription.get().strip()[:50]
+        username = entryUserNameInscription.get().strip()
+        password = entryPasswordInscription.get().strip()
         profile = profile_var.get().strip()
 
         if not username or not password:
             messagebox.showwarning("Attention", "Un des champs est vide.")
+            return
+
+        if not (3 <= len(username) <= 50):
+            messagebox.showwarning("Nom invalide", "Le nom d'utilisateur doit contenir entre 3 et 50 caractères.")
             return
 
         # La validation de policy est appliquée uniquement à la création de compte, jamais à la connexion.

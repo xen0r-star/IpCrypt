@@ -31,9 +31,9 @@ def calcule_adresse_reseau(ip1, masque1, ip2, masque2) -> tuple[list, list, str,
     if a_voit_b and b_voit_a:
         verdict = "IP 1 et IP 2 sont dans le même réseau."
     elif a_voit_b:
-        verdict = "IP 2 voit IP 1 mais IP 1 ne voit pas IP 2."
-    elif b_voit_a:
         verdict = "IP 1 voit IP 2 mais IP 2 ne voit pas IP 1."
+    elif b_voit_a:
+        verdict = "IP 2 voit IP 1 mais IP 1 ne voit pas IP 2."
     else:
         verdict = "IP 1 et IP 2 ne se voient pas."
 
@@ -124,7 +124,7 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str, entries_store: list) -
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 20, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
 
-        activer_saisie_rapide(group_entries[-4:])
+    activer_saisie_rapide(group_entries[-4:])
 
     entries_store.append(group_entries)
 
@@ -234,7 +234,7 @@ def create_ip_association_ui(on_back=None, user_id=None):
     historique = creer_panneau_historique(
         card, "Historique des comparaisons enregistrées",
         [("ip1", "IP 1", 120), ("mask1", "Masque 1", 120), ("ip2", "IP 2", 120), ("mask2", "Masque 2", 120),
-         ("modifie_par", "Dernier modificateur", 140), ("modifie_le", "Le", 130)],
+         ("modifie_par", "Dernier modificateur", 140), ("modifie_le", "Modifié le", 130)],
         lister_memes_reseaux,
         recharger_depuis_historique,
     )

@@ -87,6 +87,8 @@ def _formater(valeur) -> str:
     if valeur is None:
         return ""
     if hasattr(valeur, "strftime"):
+        if getattr(valeur, "tzinfo", None) is not None:
+            valeur = valeur.astimezone()
         return valeur.strftime("%d/%m/%Y %H:%M")
     return str(valeur)
 

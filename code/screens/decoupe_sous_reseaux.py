@@ -3,7 +3,7 @@ import customtkinter as ctk
 
 from pathlib import Path
 from utils.data_service import enregistrer_decoupe_sous_reseaux, lister_decoupes_sous_reseaux
-from screens.historique_widget import creer_panneau_historique, remplir_octets
+from screens.historique_widget import activer_saisie_rapide, creer_panneau_historique, remplir_octets
 ICO = Path(__file__).resolve().parent.parent / "images" / "iconeIpCrypt.ico"
 
 # ══════════════════════════════════════════════
@@ -240,6 +240,8 @@ def ip_octet_group(parent: ctk.CTkFrame, label_text: str) -> list:
         entries.append(entry)
         if i < 3:
             ctk.CTkLabel(inner, text=".", font=("Segoe UI", 18, "bold"), text_color=COLORS["muted"]).pack(side="left", padx=6)
+    
+    activer_saisie_rapide(entries)
     return entries
 
 
@@ -343,7 +345,7 @@ def create_decoupe_ui(on_back=None, user_id=None):
     historique = creer_panneau_historique(
         card, "Historique des découpes enregistrées",
         [("reseau", "Réseau", 140), ("cidr", "CIDR de base", 90), ("nb_sous_reseaux", "Sous-réseaux demandés", 160),
-         ("modifie_par", "Dernier modificateur", 150), ("modifie_le", "Le", 130)],
+         ("modifie_par", "Dernier modificateur", 150), ("modifie_le", "Modifié le", 130)],
         lister_decoupes_sous_reseaux,
         recharger_depuis_historique,
     )
@@ -385,12 +387,17 @@ def create_decoupe_ui(on_back=None, user_id=None):
             f"Hôtes utilisables par sous-réseau : {decoupe['hotes_par_sous_reseau']}"
         )
         if decoupe["nb_obtenus"] > LIMITE_LIGNES:
-            texte += f"\nAffichage limité aux {LIMITE_LIGNES} premiers sous-réseaux."
+            texte += f"\nAffichage limité aux {LIMITE_LIGNES} premiers sous-réseaux et au dernier."
         result_label.configure(text=texte, text_color=COLORS["primary"])
 
         tableau.delete(*tableau.get_children())
         for ligne in lister_sous_reseaux(decoupe):
             tableau.insert("", "end", values=[ligne[cle] for cle, _, _ in colonnes])
+
+        if decoupe["nb_obtenus"] > LIMITE_LIGNES:
+            tableau.insert("", "end", values=["…", "…", "…", "…", "…"])
+            dernier = sous_reseau(decoupe, decoupe["nb_obtenus"] - 1)
+            tableau.insert("", "end", values=[dernier[cle] for cle, _, _ in colonnes])
 
     def on_effacer():
         """Vide les champs, le résultat et quitte le mode modification de l'historique."""
