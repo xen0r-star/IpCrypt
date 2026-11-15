@@ -4,7 +4,7 @@ from tkinter import ttk
 import customtkinter as ctk
 
 # ══════════════════════════════════════════════
-# Panneau « Historique » partagé par les écrans de fonctionnalités (F2 à F6).
+# Panneau "Historique" partagé par les écrans de fonctionnalités (F2 à F6).
 # ══════════════════════════════════════════════
 
 COLORS = {
@@ -21,15 +21,17 @@ TEXTE_NOUVEAU = "Mode : nouvel enregistrement"
 
 
 def remplir_octets(entries: list, texte: str) -> None:
-    """Remplit un groupe de 4 champs Entry à partir d'une IP/masque en texte (ex. '10.0.0.1')."""
+    """Remplit les 4 Inputs de l'IP à partir d'une IP/masque en texte (ex. '10.0.0.1')."""
     octets = str(texte).split(".")
     for i in range(4):
         entries[i].delete(0, "end")
         entries[i].insert(0, octets[i])
 
 def activer_saisie_rapide(entries: list) -> None:
-    """Saisie rapide d'une IP en 4 cases: passage auto à la case suivante (3 chiffres ou '.') et collage d'une IP complète."""
-
+    """
+    Saisie rapide (Ctrl+V) d'une IP en 4 cases: passage auto à la case suivante (3 chiffres ou '.') et collage d'une IP complète.
+    """
+    
     def preparer_case(case, case_suivante):
         """Branche les deux comportements sur UNE case."""
 
@@ -164,7 +166,7 @@ def creer_panneau_historique(parent, titre: str, colonnes: list, charger, on_sel
 
             tree.insert("", "end", iid=iid, values=valeurs)
         reinitialiser()
-        
+
     def on_tree_select(_event=None) -> None:
         selection = tree.selection()
         if not selection or selection[0] not in lignes:

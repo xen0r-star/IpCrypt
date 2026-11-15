@@ -33,7 +33,7 @@ def definirClasse(premOctet):
 
 def definirTypeIP(octets):
     """Retourne le type de l'adresse IP : Privée, Réservée (précisée entre parenthèses) ou Publique."""
-    o1, o2, o3, o4 = (int(o) for o in octets)
+    o1, o2, o3, o4 = int(octets[0]), int(octets[1]), int(octets[2]), int(octets[3])
 
     if o1 == 10: return "Privée"
     if o1 == 172 and 16 <= o2 <= 31: return "Privée"
