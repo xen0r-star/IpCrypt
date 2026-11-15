@@ -7,7 +7,7 @@
 Desktop network tool — Python + CustomTkinter.
 IP verification, subnet analysis, cross-network association, CIDR table, user management.
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.14.7-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![CustomTkinter](https://img.shields.io/badge/CustomTkinter-5.2.2-2CA5E0?style=for-the-badge)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-psycopg3-336791?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Phase%201-blue?style=for-the-badge)
@@ -236,7 +236,7 @@ IpCrypt/
 
 ## Tech Stack
 
-- **Python 3.10+**
+- **Python 3.14.7** (version testée ; d'autres versions de Python/Tk peuvent afficher les tableaux de façon incorrecte)
 - **CustomTkinter 5.2.2** — themed widgets
 - **Pillow 12** — splash screen image rendering
 - **pandas 3** — CIDR table Excel export
@@ -290,6 +290,8 @@ CREATE TABLE users (
 ---
 
 ## Quick Start
+
+> **Prérequis : utiliser Python 3.14.7.** C'est la version avec laquelle l'application a été développée et testée. Avec `uv` : `uv venv --python 3.14.7`.
 
 ### 1. Clone
 
